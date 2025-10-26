@@ -1,20 +1,19 @@
-import pytest
 from src.cliente import Cliente
+import pytest
 
 
-def test_creacion_cliente():
-    c = Cliente("Juan", "Perez", "12345678")
-    assert c.get_nombre() == "Juan"
-    assert c.get_apellido() == "Perez"
-    assert c.get_dni() == "12345678"
+def test_crear_cliente():
+    cliente = Cliente("Ana", "Lopez", "12345678")
+    assert cliente.get_nombre() == "Ana"
+    assert cliente.get_apellido() == "Lopez"
+    assert cliente.get_dni() == "12345678"
 
-    def test_validacion_nombre_invalido():
-        c = Cliente("Juan", "Perez", "12345678")
-        with pytest.raises(ValueError):
-            c.set_nombre("Juan123")
 
-    def test_mostrar_datos():
-        c = Cliente("Ana", "Gomez", "87654321")
-        salida = c.mostrar_datos()
-        assert "Ana Gomez" in salida
-        assert "87654321" in salida
+def test_dni_invalido():
+    with pytest.raises(ValueError):
+        Cliente("Ana", "Lopez", "12A345678")
+
+
+def test_nombre_vacio():
+    with pytest.raises(ValueError):
+        Cliente("", "Lopez", "12345678")

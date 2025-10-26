@@ -4,37 +4,29 @@ from src.cliente import Cliente
 
 
 def test_crear_tarjeta():
-    cliente = Cliente("Carlos", "Martinez", "55555555")
-    tarjeta = Tarjeta("1234-5678", cliente, 1000.0)
-    assert tarjeta.numero == "1234-5678"
-    assert tarjeta.get_limite_credito() == 1000.0
-    assert tarjeta.get_saldo_disponible() == 1000.0
+    cliente = Cliente("Carla", "Romero", "11223344")
+    tarjeta = Tarjeta("9999-8888-7777-6666", cliente, limite=5000.0)
+    assert tarjeta.get_limite() == 5000.0
+    assert tarjeta.get_saldo_actual() == 0.0
 
 
-def test_compra_exitosa():
-    cliente = Cliente("Laura", "Gomez", "44444444")
-    tarjeta = Tarjeta("5678-9999", cliente, 500.0)
-    tarjeta.comprar(200.0)
-    assert tarjeta.get_saldo_disponible() == 300.0
+def test_realizar_compra():
+    cliente = Cliente("Luis", "Fernandez", "22334455")
+    tarjeta = Tarjeta("1111-2222-3333-4444", cliente, limite=1000)
+    tarjeta.realizar_compra(500)
+    assert tarjeta.get_saldo_actual() == 500
 
 
-def test_compra_limite_excedido():
-    cliente = Cliente("Pedro", "Luna", "66666666")
-    tarjeta = Tarjeta("7890-1111", cliente, 300.0)
+def test_limite_excedido():
+    cliente = Cliente("Ana", "Perez", "33445566")
+    tarjeta = Tarjeta("1234-5678-9012-3456", cliente, limite=1000)
     with pytest.raises(LimiteExcedidoError):
-        tarjeta.comprar(400.0)
+        tarjeta.realizar_compra(2000)
 
 
-def test_pago_tarjeta():
-    cliente = Cliente("Lucia", "Suarez", "88888888")
-    tarjeta = Tarjeta("1111-2222", cliente, 1000.0)
-    tarjeta.comprar(400.0)
-    tarjeta.pagar(200.0)
-    assert tarjeta.get_saldo_disponible() == 800.0
-
-
-def test_pago_excede_limite():
-    cliente = Cliente("Mariano", "Vega", "99999999")
-    tarjeta = Tarjeta("9999-0000", cliente, 1000.0)
-    tarjeta.pagar(500.0)
-    assert tarjeta.get_saldo_disponible() == 1000.0
+def test_pagar_tarjeta():
+    cliente = Cliente("Mario", "Gomez", "44556677")
+    tarjeta = Tarjeta("9876-5432-1098-7654", cliente, limite=3000)
+    tarjeta.realizar_compra(1000)
+    tarjeta.pagar_tarjeta(500)
+    assert tarjeta.get_saldo_actual() == 500
