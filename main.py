@@ -3,175 +3,113 @@ from src.cuenta import Cuenta, SaldoInsuficienteError
 from src.cuenta_ahorro import CuentaAhorro
 from src.tarjeta import Tarjeta, LimiteExcedidoError
 
+
+# ====== ARREGLOS ======
 clientes = []
 cuentas = []
 tarjetas = []
 
 
-def buscar_cliente_por_dni(dni):
-    for c in clientes:
-        if c.get_dni() == dni:
-            return c
-    return None
+# ====== FUNCIONES PRINCIPALES ======
+
+def guardar_cliente(nombre, apellido, dni):
+    """Agrega un nuevo cliente a la lista."""
+    try:
+        if not nombre or not apellido or not dni:
+            raise ValueError("Todos los campos del cliente son obligatorios.")
+        if any(c.get_dni() == dni for c in clientes):
+            raise ValueError("Ya existe un cliente con ese DNI.")
+        cliente = Cliente(nombre, apellido, dni)
+        clientes.append(cliente)
+        print(f"Cliente agregado: {cliente}\n")
+        return cliente
+    except ValueError as e:
+        print(f"Error: {e}\n")
 
 
-def menu():
-    while True:
-        print("\n===== SISTEMA BANCARIO INTERACTIVO =====")
-        print("1. Crear cliente")
-        print("2. Crear cuenta corriente")
-        print("3. Crear cuenta de ahorro")
-        print("4. Depositar dinero")
-        print("5. Retirar dinero")
-        print("6. Ver saldo")
-        print("7. Crear tarjeta")
-        print("8. Realizar compra con tarjeta")
-        print("9. Pagar tarjeta")
-        print("10. Ver movimientos de tarjeta")
-        print("0. Salir")
+def mostrar_clientes():
+    """Muestra todos los clientes registrados."""
+    try:
+        if len(clientes) == 0:
+            raise IndexError("No hay clientes cargados.")
+        print("\n=== LISTADO DE CLIENTES ===")
+        for cliente in clientes:
+            print(cliente)
+        print()
+    except IndexError as e:
+        print(f"Atención: {e}\n")
 
-        opcion = input("\nSelecciona una opción: ")
 
-        if opcion == "1":
-            nombre = input("Nombre: ")
-            apellido = input("Apellido: ")
-            dni = input("DNI: ")
-            try:
-                cliente = Cliente(nombre, apellido, dni)
-                clientes.append(cliente)
-                print(f"Cliente creado: {cliente}")
-            except ValueError as e:
-                print(f"Error: {e}")
+def guardar_cuenta(nro_cuenta, cliente, saldo=0.0):
+    """Agrega una cuenta corriente."""
+    try:
+        cuenta = Cuenta(nro_cuenta, cliente, saldo)
+        cuentas.append(cuenta)
+        print(f"Cuenta creada: {nro_cuenta}\n")
+        return cuenta
+    except ValueError as e:
+        print(f"Error: {e}\n")
 
-        elif opcion == "2":
-            dni = input("DNI del cliente: ")
-            cliente = buscar_cliente_por_dni(dni)
-            if cliente:
-                nro = input("Número de cuenta: ")
-                try:
-                    cuenta = Cuenta(nro, cliente)
-                    cuentas.append(cuenta)
-                    print("Cuenta corriente creada con éxito.")
-                except ValueError as e:
-                    print(f"Error: {e}")
-            else:
-                print("Cliente no encontrado.")
 
-        elif opcion == "3":
-            dni = input("DNI del cliente: ")
-            cliente = buscar_cliente_por_dni(dni)
-            if cliente:
-                nro = input("Número de cuenta ahorro: ")
-                interes = float(input("Tasa de interés (%): "))
-                cuenta = CuentaAhorro(nro, cliente, interes=interes)
-                cuentas.append(cuenta)
-                print("Cuenta de ahorro creada con éxito.")
-            else:
-                print("Cliente no encontrado.")
+def mostrar_cuentas():
+    """Muestra todas las cuentas creadas."""
+    try:
+        if len(cuentas) == 0:
+            raise IndexError("No hay cuentas cargadas.")
+        print("\n=== LISTADO DE CUENTAS ===")
+        for cuenta in cuentas:
+            print(
+                f"{cuenta.get_nro_cuenta()} - {cuenta.get_cliente().get_dni()} - ${cuenta.get_saldo()}")
+        print()
+    except IndexError as e:
+        print(f"Atención: {e}\n")
 
-        elif opcion == "4":
-            nro = input("Número de cuenta: ")
-            for c in cuentas:
-                if c.get_nro_cuenta() == nro:
-                    monto = float(input("Monto a depositar: "))
-                    try:
-                        c.depositar(monto)
-                        print(
-                            f"Depósito exitoso. Saldo actual: ${c.get_saldo()}")
-                    except ValueError as e:
-                        print(f"Error: {e}")
-                    break
-            else:
-                print("Cuenta no encontrada.")
 
-        elif opcion == "5":
-            nro = input("Número de cuenta: ")
-            for c in cuentas:
-                if c.get_nro_cuenta() == nro:
-                    monto = float(input("Monto a retirar: "))
-                    try:
-                        c.retirar(monto)
-                        print(
-                            f"Retiro exitoso. Saldo actual: ${c.get_saldo()}")
-                    except (SaldoInsuficienteError, ValueError) as e:
-                        print(f"Error: {e}")
-                    break
-            else:
-                print("Cuenta no encontrada.")
+def guardar_tarjeta(numero, cliente, limite):
+    """Agrega una nueva tarjeta de crédito."""
+    try:
+        tarjeta = Tarjeta(numero, cliente, limite)
+        tarjetas.append(tarjeta)
+        print(f"Tarjeta agregada: {numero}\n")
+        return tarjeta
+    except ValueError as e:
+        print(f"Error: {e}\n")
 
-        elif opcion == "6":
-            nro = input("Número de cuenta: ")
-            for c in cuentas:
-                if c.get_nro_cuenta() == nro:
-                    print(f"Saldo actual: ${c.get_saldo()}")
-                    break
-            else:
-                print("Cuenta no encontrada.")
 
-        elif opcion == "7":
-            dni = input("DNI del cliente: ")
-            cliente = buscar_cliente_por_dni(dni)
-            if cliente:
-                numero = input("Número de tarjeta: ")
-                limite = float(input("Límite de crédito: "))
-                try:
-                    tarjeta = Tarjeta(numero, cliente, limite)
-                    tarjetas.append(tarjeta)
-                    print("Tarjeta creada con éxito.")
-                except ValueError as e:
-                    print(f"Error: {e}")
-            else:
-                print("Cliente no encontrado.")
+def mostrar_tarjetas():
+    """Muestra todas las tarjetas registradas."""
+    try:
+        if len(tarjetas) == 0:
+            raise IndexError("No hay tarjetas registradas.")
+        print("\n=== LISTADO DE TARJETAS ===")
+        for tarjeta in tarjetas:
+            print(
+                f"{tarjeta.get_numero()} - {tarjeta.get_cliente().get_dni()} - Saldo: ${tarjeta.get_saldo_actual()}")
+        print()
+    except IndexError as e:
+        print(f"Atención: {e}\n")
 
-        elif opcion == "8":
-            numero = input("Número de tarjeta: ")
-            for t in tarjetas:
-                if t.get_numero() == numero:
-                    monto = float(input("Monto de la compra: "))
-                    try:
-                        t.realizar_compra(monto)
-                        print(
-                            f"Compra registrada. Saldo actual: ${t.get_saldo_actual()}")
-                    except (ValueError, LimiteExcedidoError) as e:
-                        print(f"Error: {e}")
-                    break
-            else:
-                print("Tarjeta no encontrada.")
 
-        elif opcion == "9":
-            numero = input("Número de tarjeta: ")
-            for t in tarjetas:
-                if t.get_numero() == numero:
-                    monto = float(input("Monto del pago: "))
-                    try:
-                        t.pagar_tarjeta(monto)
-                        print(
-                            f"Pago registrado. Saldo actual: ${t.get_saldo_actual()}")
-                    except ValueError as e:
-                        print(f"Error: {e}")
-                    break
-            else:
-                print("Tarjeta no encontrada.")
+# ====== BLOQUE PRINCIPAL ======
 
-        elif opcion == "10":
-            numero = input("Número de tarjeta: ")
-            for t in tarjetas:
-                if t.get_numero() == numero:
-                    print("\nMovimientos de tarjeta:")
-                    for fecha, monto, tipo in t.get_movimientos():
-                        print(
-                            f" - {fecha.strftime('%Y-%m-%d %H:%M:%S')} | {tipo}: ${monto}")
-                    break
-            else:
-                print("Tarjeta no encontrada.")
+def main():
+    print("=== SISTEMA BANCARIO (Versión evaluable) ===\n")
 
-        elif opcion == "0":
-            print("Gracias por usar el sistema bancario.")
-            break
+    # Carga simulada de datos
+    cliente1 = guardar_cliente("Juan", "Pérez", "12345678")
+    cliente2 = guardar_cliente("Ana", "Gómez", "87654321")
 
-        else:
-            print("Opción no válida. Intenta de nuevo.")
+    guardar_cuenta("001", cliente1, 1500)
+    guardar_cuenta("002", cliente2, 2000)
+
+    guardar_tarjeta("1111-2222-3333-4444", cliente1, 5000)
+    guardar_tarjeta("9999-8888-7777-6666", cliente2, 3000)
+
+    # Mostrar los datos cargados
+    mostrar_clientes()
+    mostrar_cuentas()
+    mostrar_tarjetas()
 
 
 if __name__ == "__main__":
-    menu()
+    main()
