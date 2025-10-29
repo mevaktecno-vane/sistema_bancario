@@ -12,7 +12,7 @@ def main(page: ft.Page):
     page.padding = 20
     page.update()
 
-    # --Sección cliente --
+    # --- Sección cliente ---
 
     cliente_info = ft.Column(
         [
@@ -59,7 +59,7 @@ def main(page: ft.Page):
 
     page.update()
 
-    # Sección cuenta 
+    # --- Sección cuenta ---
 
     # Componentes que se actualizan en tiempo real
     current_balance_cc = ft.Text(f"${cuenta.get_saldo():.2f}", size=32, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_ACCENT_700)
@@ -124,7 +124,55 @@ def main(page: ft.Page):
         width=600,
     )
     
+    # --- Sección de cuenta de ahorros ---
     
+    saldo_actual_ca = ft.Text(f"${cuenta.get_saldo():.2f}", size=32, weight=ft.FontWeight.BOLD, color=ft.colors.TEAL_ACCENT_700)
+    texto_tasa_interes = ft.Text(f"Tasa de Interés: {cuenta.get_interes() * 100:.2f}%", size=18, color=ft.colors.TEAL_800)
+
+    def click_aplicar_interes(e):
+        """Applies interest to the savings account."""
+        try:
+            interes_ganado = cuenta.aplicar_interes()
+            saldo_actual_ca.value = f"${cuenta.get_saldo():.2f}"
+            
+            if interes_ganado > 0:
+                show_alert("Intereses Aplicados", f"¡Felicidades! Se aplicó un interés de ${interes_ganado:.2f} a la cuenta de ahorro.", ft.icons.MONETIZATION_ON, ft.colors.YELLOW_700)
+            else:
+                 show_alert("Intereses Aplicados", "El saldo es cero o negativo, no se generaron intereses.", ft.icons.INFO_OUTLINE)
+            
+            # Actualizamos el saldo de la cuenta y la lista de transacciones, ya que la transacción está registrada allí (en la clase base).
+            actualizar_saldo() 
+            page.update()
+        except Exception as ex:
+            show_alert("Error", f"Error al aplicar interés: {ex}", ft.icons.BUG_REPORT)
+
+    controles_ca = ft.Container(
+        content=ft.Column([
+            ft.Text("Cuenta de Ahorro", size=24, weight=ft.FontWeight.W_600),
+            ft.Text(f"Nro de Cuenta: {cuenta.get_nro_cuenta()}", size=16, color=ft.Colors.BLACK54),
+            ft.Card(
+                content=ft.Container(
+                    ft.Column([
+                        ft.Text("Saldo Actual:", size=20, color=ft.Colors.BLACK87),
+                        actualizar_saldo,
+                        ft.Divider(),
+                        texto_tasa_interes
+                    ]),
+                    padding=15,
+                    alignment=ft.alignment.center_left
+                )
+            ),
+            ft.ElevatedButton(
+                text="Aplicar Intereses Ahora", 
+                icon=ft.Icons.CALCULATE, 
+                on_click=click_aplicar_interes,
+                style=ft.ButtonStyle(bgcolor=ft.Colors.TEAL_300, color=ft.Colors.BLACK, shape=ft.RoundedRectangleBorder(radius=10)),
+                width=300
+            ),
+        ], spacing=20, horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+        padding=20,
+        width=600
+    )
 
     #Sección tarjeta
   
