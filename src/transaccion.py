@@ -3,10 +3,10 @@ from datetime import datetime
 
 class Transaccion:
     def __init__(self, tipo: str, monto: float):
-        # Validar tipo
         if tipo not in ["deposito", "retiro"]:
             raise ValueError("Tipo de transacción inválido")
-
+        if not isinstance(monto, (int, float)):
+            raise TypeError("El monto debe ser un número.")
         if monto <= 0:
             raise ValueError("El monto debe ser mayor a cero.")
 
@@ -14,7 +14,7 @@ class Transaccion:
         self.__monto = monto
         self.__fecha = datetime.now()
 
-    # Métodos getters
+    # Getters
     def get_tipo(self):
         return self.__tipo
 
@@ -25,4 +25,4 @@ class Transaccion:
         return self.__fecha
 
     def __str__(self):
-        return f"Transacción: {self.__tipo} - Monto: ${self.__monto:.2f} - Fecha: {self.__fecha.strftime('%Y-%m-%d %H:%M:%S')}"
+        return f"{self.__fecha.strftime('%Y-%m-%d %H:%M:%S')} - {self.__tipo}: ${self.__monto}"

@@ -30,12 +30,16 @@ class Cuenta:
 
     # Operaciones
     def depositar(self, monto: float):
+        if not isinstance(monto, (int, float)):
+            raise TypeError("El monto del deposito debe ser un número.")
         if monto <= 0:
             raise ValueError("El monto del deposito debe ser mayor a cero.")
         self.__saldo += monto
         self.__transacciones.append(Transaccion("deposito", monto))
 
     def retirar(self, monto: float):
+        if not isinstance(monto, (int, float)):
+            raise TypeError("El monto del retiro debe ser un número.")
         if monto <= 0:
             raise ValueError("El monto del retiro debe ser mayor a cero.")
         if monto > self.__saldo:

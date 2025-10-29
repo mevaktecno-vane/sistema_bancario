@@ -1,19 +1,21 @@
-# tests/test_transaccion.py
 import pytest
 from src.transaccion import Transaccion
 
 
 def test_crear_transaccion_deposito():
     t = Transaccion("deposito", 100.0)
-    assert t.tipo == "deposito"
-    assert t.monto == 100.0
-    assert hasattr(t, "fecha")
+    assert t.get_tipo() == "deposito"
+    assert t.get_monto() == 100.0
+    assert t.get_fecha() is not None
+    assert "deposito" in str(t)
 
 
 def test_crear_transaccion_retiro():
     t = Transaccion("retiro", 50.0)
-    assert t.tipo == "retiro"
-    assert t.monto == 50.0
+    assert t.get_tipo() == "retiro"
+    assert t.get_monto() == 50.0
+    assert t.get_fecha() is not None
+    assert "retiro" in str(t)
 
 
 def test_tipo_invalido():
@@ -21,6 +23,11 @@ def test_tipo_invalido():
         Transaccion("transferencia", 100.0)
 
 
-def test_monto_negativo():
+def test_monto_invalido():
     with pytest.raises(ValueError):
-        Transaccion("deposito", -20)
+        Transaccion("deposito", -50.0)
+
+
+def test_monto_no_numerico():
+    with pytest.raises(TypeError):
+        Transaccion("deposito", "cien")

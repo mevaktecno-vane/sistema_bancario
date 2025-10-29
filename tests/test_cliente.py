@@ -1,19 +1,20 @@
-from src.cliente import Cliente
+
 import pytest
+from src.cliente import Cliente
 
 
-def test_crear_cliente():
-    cliente = Cliente("Ana", "Lopez", "12345678")
+def test_crear_cliente_valido():
+    cliente = Cliente("Ana", "López", "12345678")
     assert cliente.get_nombre() == "Ana"
-    assert cliente.get_apellido() == "Lopez"
+    assert cliente.get_apellido() == "López"
     assert cliente.get_dni() == "12345678"
 
 
-def test_dni_invalido():
+def test_cliente_nombre_vacio():
     with pytest.raises(ValueError):
-        Cliente("Ana", "Lopez", "12A345678")
+        Cliente("", "López", "12345678")
 
 
-def test_nombre_vacio():
+def test_cliente_dni_vacio():
     with pytest.raises(ValueError):
-        Cliente("", "Lopez", "12345678")
+        Cliente("Ana", "López", "")
