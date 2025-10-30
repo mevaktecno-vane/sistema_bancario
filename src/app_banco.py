@@ -7,34 +7,136 @@ from src.cuenta_ahorro import CuentaAhorro
 
 def main(page: ft.Page):
     # Configuración básica de la página
+    def show_alert(title: str, message: str, icon: ft.Icons, color=ft.Colors.RED):
+    # Función local que puede acceder a 'page'
+        def close_dlg(e):
+            page.dialog.open = False
+            page.update()
+        
+        dlg = ft.AlertDialog(
+            modal=True,
+            title=ft.Row([ft.Icon(icon, color=color), ft.Text(title)]),
+            content=ft.Text(message),
+            actions=[
+                ft.TextButton("Ok", on_click=close_dlg),
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+    
+        page.dialog = dlg
+        dlg.open = True
+        page.update()
+
+
     page.title = "Banco estudiantil San Martín"
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.theme_mode = ft.ThemeMode.LIGHT
     page.padding = 20
     page.update()
-    transaction_list_cc = ft.Column() # Asumo que es un ft.Column, ajústalo si es diferente (ej: ft.ListView)
+    nombre_input = ft.TextField(label="Nombre", width=200)
+    apellido_input = ft.TextField(label="Apellido", width=200)
+    dni_input = ft.TextField(label="DNI", width=200)
+    nro_cuenta_input = ft.TextField(label="Nro de Cuenta", width=200, value="0001") 
+    saldo_input = ft.TextField(label="Saldo Inicial", width=200, value="0.0") 
+    transaction_list_cc = ft.Column()
     mi_cliente = Cliente(nombre="Daniel", apellido="Perez", dni="12345678") 
     mi_cuenta = CuentaAhorro(nro_cuenta="12345", cliente=mi_cliente, saldo=1000.0, interes=1.0)
     mi_tarjeta = Tarjeta(numero="9876-5432-1098-7654", cliente=mi_cliente)
 
-    # --- Sección cliente ---
-
+    
+    def manejar_nuevo_cliente(e):
+        nonlocal mi_cliente, mi_cuenta, mi_tarjeta
+        mi_cliente = Cliente(nombre=nombre_input.value, apellido=apellido_input.value, dni=dni_input.value)
+        mi_cuenta = CuentaAhorro(nro_cuenta=nro_cuenta_input.value, cliente=mi_cliente, saldo=float(saldo_input.value), interes=1.0)
+        mi_tarjeta = Tarjeta(numero="9876-5432-1098-7654", cliente=mi_cliente)
+        
+    # --- Nueva Variable para el Card que Muestra los Datos ---
+    cliente_data_card = ft.Card(
+        content=ft.ListTile(
+        leading=ft.Icon(ft.Icons.PERSON, color=ft.Colors.BLUE_GREY_700, size=30),
+        title=ft.Text(f"Nombre Completo: {mi_cliente.get_nombre()} {mi_cliente.get_apellido()}", weight=ft.FontWeight.BOLD),
+        subtitle=ft.Text(f"DNI: {mi_cliente.get_dni()}"),
+    ),
+    elevation=4
+    )
+    page.update()
+   
+    # Actualizar la sección de Cliente
     cliente_info = ft.Column(
         [
             ft.Text("Información del Cliente", size=24, weight=ft.FontWeight.W_600),
-            ft.Card(
-                content=ft.ListTile(
-                    leading=ft.Icon(ft.Icons.PERSON, color=ft.Colors.BLUE_GREY_700, size=30),
-                    title=ft.Text(f"Nombre Completo: {mi_cliente.get_nombre()} {mi_cliente.get_apellido()}", weight=ft.FontWeight.BOLD),
-                    subtitle=ft.Text(f"DNI: {mi_cliente.get_dni()}"),
-                ),
-                elevation=4
-            ),
+            ft.Container(height=80, content=ft.Text("Cargando cliente...")),
+            cliente_data_card, 
+            ft.Divider(),
+            # Formulario para Nuevo Cliente (el fragmento que me pasaste)
+            ft.Text("Nuevo Cliente y Cuentas:", size=20, weight=ft.FontWeight.W_500),
+            ft.Row([nombre_input, apellido_input]),
+            ft.Row([dni_input, nro_cuenta_input]),
+            ft.Row([saldo_input]),
+            ft.ElevatedButton(
+                text="Crear Nuevo Cliente",
+                icon=ft.Icons.SAVE,
+                on_click=manejar_nuevo_cliente, 
+                style=ft.ButtonStyle(bgcolor=ft.Colors.BLUE_500, color=ft.Colors.WHITE)
+            )
         ],
+        
         spacing=20,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER
     )
+
+    cliente_info.controls[1] = ft.Card(
+        content=ft.ListTile(
+            leading=ft.Icon(ft.Icons.PERSON, color=ft.Colors.BLUE_GREY_700, size=30),
+            title=ft.Text(f"Nombre Completo: {mi_cliente.get_nombre()} {mi_cliente.get_apellido()}", weight=ft.FontWeight.BOLD),
+            subtitle=ft.Text(f"DNI: {mi_cliente.get_dni()}"),
+        ),
+        elevation=4
+    )
+    # --- Función para Crear Nuevo Cliente ---
     
+    # Intentar crear un nuevo cliente con los datos del formulario
+    try:
+        nuevo_saldo = float(saldo_input.value)
+        
+        # 1. Crea el nuevo Cliente
+        mi_cliente = Cliente(
+            nombre=nombre_input.value,   
+            apellido=apellido_input.value,  
+            dni=dni_input.value  
+        )
+        # 2. Crea la nueva Cuenta y Tarjeta (asociadas al nuevo cliente)
+        mi_cuenta = CuentaAhorro(
+            nro_cuenta=nro_cuenta_input.value,
+            cliente=mi_cliente,
+            saldo=nuevo_saldo,
+            interes=1.0 # Tasa de interés por defecto
+        )
+        mi_tarjeta = Tarjeta(
+            numero="9876-xxxx-xxxx-7654", # Un número de tarjeta simple
+            cliente=mi_cliente
+        )
+        
+        # 3. Actualizar la UI con la nueva información
+
+
+        # Actualizar todos los controles dependientes
+        actualizar_saldo() 
+        actualizar_tarjeta()
+        
+        show_alert("Éxito", f"Cliente {mi_cliente.get_nombre()} agregado con éxito.", ft.Icons.PERSON_ADD, ft.Colors.BLUE_500)
+        
+    except Exception as ex:
+        show_alert("Error de Creación", f"Error al crear: {ex}", ft.Icons.ERROR)
+    
+    # Reemplazamos el control existente con uno nuevo
+        cliente_data_card.content = ft.ListTile(
+            leading=ft.Icon(ft.Icons.PERSON, color=ft.Colors.BLUE_GREY_700, size=30),
+            title=ft.Text(f"Nombre Completo: {mi_cliente.get_nombre()} {mi_cliente.get_apellido()}", weight=ft.FontWeight.BOLD),
+            subtitle=ft.Text(f"DNI: {mi_cliente.get_dni()}"),
+        )
+   
+    page.update()
     # Campo de entrada para el importe
 
     cantidad_entrada = ft.TextField(
