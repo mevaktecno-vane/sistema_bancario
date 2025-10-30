@@ -1,8 +1,9 @@
 import flet as ft
-import src.cliente as cliente
-import src.cuenta as cuenta
-import src.tarjeta as tarjeta
-import src.transaccion as transaccion
+from src.cliente import Cliente
+from src.cuenta import Cuenta
+from src.tarjeta import Tarjeta
+from src.transaccion import Transaccion
+from src.cuenta_ahorro import CuentaAhorro
 
 def main(page: ft.Page):
     # Configuración básica de la página
@@ -11,6 +12,10 @@ def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.LIGHT
     page.padding = 20
     page.update()
+    transaction_list_cc = ft.Column() # Asumo que es un ft.Column, ajústalo si es diferente (ej: ft.ListView)
+    mi_cliente = Cliente(nombre="Daniel", apellido="Perez", dni="12345678") 
+    mi_cuenta = CuentaAhorro(nro_cuenta="12345", cliente=mi_cliente, saldo=1000.0, interes=1.0)
+    mi_tarjeta = Tarjeta(numero="9876-5432-1098-7654", cliente=mi_cliente)
 
     # --- Sección cliente ---
 
@@ -20,8 +25,8 @@ def main(page: ft.Page):
             ft.Card(
                 content=ft.ListTile(
                     leading=ft.Icon(ft.Icons.PERSON, color=ft.Colors.BLUE_GREY_700, size=30),
-                    title=ft.Text(f"Nombre Completo: {cliente.get_nombre()} {cliente.get_apellido()}", weight=ft.FontWeight.BOLD),
-                    subtitle=ft.Text(f"DNI: {cliente.get_dni()}"),
+                    title=ft.Text(f"Nombre Completo: {mi_cliente.get_nombre()} {mi_cliente.get_apellido()}", weight=ft.FontWeight.BOLD),
+                    subtitle=ft.Text(f"DNI: {mi_cliente.get_dni()}"),
                 ),
                 elevation=4
             ),
@@ -41,13 +46,13 @@ def main(page: ft.Page):
 
     def actualizar_saldo():
         """"Actualiza el saldo de la cuenta y la lista de transacciones."."""
-        current_balance_cc.value = f"${cuenta.get_saldo():.2f}"
+        current_balance_cc.value = f"${mi_cuenta.get_saldo():.2f}"
         
     # Reconstruir lista de transacciones
 
     transaction_list_cc.controls.clear()
         
-    transactions = cuenta.mostrar_transacciones()
+    transactions = mi_cuenta.mostrar_transacciones()
     if not transactions:
             transaction_list_cc.controls.append(ft.Text("No hay transacciones aún.", italic=True, color=ft.Colors.BLACK54))
     else:
@@ -62,7 +67,8 @@ def main(page: ft.Page):
     # --- Sección cuenta ---
 
     # Componentes que se actualizan en tiempo real
-    current_balance_cc = ft.Text(f"${cuenta.get_saldo():.2f}", size=32, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_ACCENT_700)
+
+    current_balance_cc = ft.Text(f"${mi_cuenta.get_saldo():.2f}", size=32, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_ACCENT_700)
     transaction_list_cc = ft.Column(scroll=ft.ScrollMode.AUTO, height=200, spacing=8)
 
     def manejar_operacion(tipo_operacion: str, e):
@@ -71,10 +77,10 @@ def main(page: ft.Page):
             monto = float(cantidad_entrada.value)
             
             if tipo_operacion == "depositar":
-                cuenta.depositar(monto)
+                mi_cuenta.depositar(monto)
                 show_alert("Éxito", f"Depósito de ${monto:.2f} realizado con éxito.", ft.Icons.CHECK_CIRCLE)
             elif tipo_operacion == "retirar":
-                cuenta.retirar(monto)
+                mi_cuenta.retirar(monto)
                 show_alert("Éxito", f"Retiro de ${monto:.2f} realizado con éxito.", ft.Icons.CHECK_CIRCLE)
             
             cantidad_entrada.value = "" # Limpiar input
@@ -90,7 +96,7 @@ def main(page: ft.Page):
     cuenta_controles = ft.Container(
         content=ft.Column([
             ft.Text("Cuenta", size=24, weight=ft.FontWeight.W_600),
-            ft.Text(f"Nro de Cuenta: {cuenta.get_nro_cuenta()}", size=16, color=ft.Colors.BLACK54),
+            ft.Text(f"Nro de Cuenta: {mi_cuenta.get_nro_cuenta()}", size=16, color=ft.Colors.BLACK54),
             ft.Card(
                 content=ft.Container(
                     ft.Column([
@@ -126,14 +132,14 @@ def main(page: ft.Page):
     
     # --- Sección de cuenta de ahorros ---
     
-    saldo_actual_ca = ft.Text(f"${cuenta.get_saldo():.2f}", size=32, weight=ft.FontWeight.BOLD, color=ft.Colors.TEAL_ACCENT_700)
-    texto_tasa_interes = ft.Text(f"Tasa de Interés: {cuenta.get_interes() * 100:.2f}%", size=18, color=ft.Colors.TEAL_800)
+    saldo_actual_ca = ft.Text(f"${mi_cuenta.get_saldo():.2f}", size=32, weight=ft.FontWeight.BOLD, color=ft.Colors.TEAL_ACCENT_700)
+    texto_tasa_interes = ft.Text(f"Tasa de Interés: {mi_cuenta.get_interes() * 100:.2f}%", size=18, color=ft.Colors.TEAL_800)
 
     def click_aplicar_interes(e):
         """Applies interest to the savings account."""
         try:
-            interes_ganado = cuenta.aplicar_interes()
-            saldo_actual_ca.value = f"${cuenta.get_saldo():.2f}"
+            interes_ganado = mi_cuenta.aplicar_interes()
+            saldo_actual_ca.value = f"${mi_cuenta.get_saldo():.2f}"
             
             if interes_ganado > 0:
                 show_alert("Intereses Aplicados", f"¡Felicidades! Se aplicó un interés de ${interes_ganado:.2f} a la cuenta de ahorro.", ft.Icons.MONETIZATION_ON, ft.Colors.YELLOW_700)
@@ -149,12 +155,12 @@ def main(page: ft.Page):
     controles_ca = ft.Container(
         content=ft.Column([
             ft.Text("Cuenta de Ahorro", size=24, weight=ft.FontWeight.W_600),
-            ft.Text(f"Nro de Cuenta: {cuenta.get_nro_cuenta()}", size=16, color=ft.Colors.BLACK54),
+            ft.Text(f"Nro de Cuenta: {mi_cuenta.get_nro_cuenta()}", size=16, color=ft.Colors.BLACK54),
             ft.Card(
                 content=ft.Container(
                     ft.Column([
-                        ft.Text("Saldo Actual:", size=20, color=ft.Colors.BLACK87),
-                        actualizar_saldo,
+                       ft.Text("Saldo Actual:", size=20, color=ft.Colors.BLACK87),
+                        saldo_actual_ca,
                         ft.Divider(),
                         texto_tasa_interes
                     ]),
@@ -178,7 +184,7 @@ def main(page: ft.Page):
 
     #Componentes que se actualizan en tiempo real
 
-    current_debt_card = ft.Text(f"${tarjeta.get_saldo_actual():.2f}", size=32, weight=ft.FontWeight.BOLD)
+    current_debt_card = ft.Text(f"${mi_tarjeta.get_saldo_actual():.2f}", size=32, weight=ft.FontWeight.BOLD)
     movement_list_card = ft.Column(scroll=ft.ScrollMode.AUTO, height=200, spacing=8)
 
     # Campo de entrada para el importe
@@ -194,7 +200,7 @@ def main(page: ft.Page):
         """Actualiza la lista de deudas y movimientos de tarjetas."""
         
         # Color del texto de la deuda según el nivel de deuda
-        debt_ratio = tarjeta.get_saldo_actual() / tarjeta.get_limite() if tarjeta.get_limite() > 0 else 0
+        debt_ratio = mi_tarjeta.get_saldo_actual() / mi_tarjeta.get_limite() if mi_tarjeta.get_limite() > 0 else 0
         
         if debt_ratio > 0.8:
             current_debt_card.color = ft.Colors.RED_800
@@ -203,13 +209,13 @@ def main(page: ft.Page):
         else:
             current_debt_card.color = ft.Colors.BLUE_GREY_700
             
-        current_debt_card.value = f"${tarjeta.get_saldo_actual():.2f}"
+        current_debt_card.value = f"${mi_tarjeta.get_saldo_actual():.2f}"
 
          # Lista de movimiento de reconstrucción
 
         movement_list_card.controls.clear()
         
-        movements = tarjeta.get_movimientos()
+        movements = mi_tarjeta.get_movimientos()
         if not movements:
             movement_list_card.controls.append(ft.Text("No hay movimientos aún.", italic=True, color=ft.Colors.BLACK54))
         else:
@@ -227,11 +233,11 @@ def main(page: ft.Page):
             monto = float(actualizar_tarjeta.value)
             
             if tipo_operacion == "compra":
-                tarjeta.realizar_compra(monto)
+                mi_tarjeta.realizar_compra(monto)
                 show_alert("Éxito", f"Compra de ${monto:.2f} registrada.", ft.Icons.SHOPPING_BAG, ft.Colors.RED_500)
             elif tipo_operacion == "pago":
-                tarjeta.pagar_tarjeta(monto)
-                show_alert("Éxito", f"Pago de ${monto:.2f} aplicado. Deuda restante: ${tarjeta.get_saldo_actual():.2f}", ft.Icons.RECEIPT, ft.Colors.GREEN_500)
+                mi_tarjeta.pagar_tarjeta(monto)
+                show_alert("Éxito", f"Pago de ${monto:.2f} aplicado. Deuda restante: ${mi_tarjeta.get_saldo_actual():.2f}", ft.Icons.RECEIPT, ft.Colors.GREEN_500)
             
             amount_input_card.value = "" # Limpiar input
             actualizar_tarjeta() # Actualizar la tarjeta
@@ -245,8 +251,8 @@ def main(page: ft.Page):
     card_controls = ft.Container(
         content=ft.Column([
             ft.Text("Tarjeta de Crédito", size=24, weight=ft.FontWeight.W_600),
-            ft.Text(f"Nro de Tarjeta: {tarjeta.get_numero()}", size=16, color=ft.Colors.BLACK54),
-            ft.Text(f"Límite de Crédito: ${tarjeta.get_limite():.2f}", size=18, color=ft.Colors.BLUE_GREY_700),
+            ft.Text(f"Nro de Tarjeta: {mi_tarjeta.get_numero()}", size=16, color=ft.Colors.BLACK54),
+            ft.Text(f"Límite de Crédito: ${mi_tarjeta.get_limite():.2f}", size=18, color=ft.Colors.BLUE_GREY_700),
             ft.Card(
                 content=ft.Container(
                     ft.Column([
@@ -295,22 +301,22 @@ def main(page: ft.Page):
             tabs=[
                 ft.Tab(
                     text="Cliente",
-                    icon=ft.icons.ACCOUNT_CIRCLE,
+                    icon=ft.Icons.ACCOUNT_CIRCLE,
                     content=ft.Container(cliente_info, alignment=ft.alignment.top_center, padding=20)
                 ),
                 ft.Tab(
                     text="Cuenta",
-                    icon=ft.icons.ACCOUNT_BALANCE,
+                    icon=ft.Icons.ACCOUNT_BALANCE,
                     content=ft.Container(cuenta_controles, alignment=ft.alignment.top_center)
                 ),
                 ft.Tab(
                     text="Cta. Ahorro",
-                    icon=ft.icons.SAVINGS,
+                    icon=ft.Icons.SAVINGS,
                     content=ft.Container(controles_ca, alignment=ft.alignment.top_center)
                 ),
                 ft.Tab(
                     text="Tarjeta",
-                    icon=ft.icons.CREDIT_CARD,
+                    icon=ft.Icons.CREDIT_CARD,
                     content=ft.Container(card_controls, alignment=ft.alignment.top_center)
                 ),
             ],
