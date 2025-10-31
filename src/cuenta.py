@@ -1,6 +1,6 @@
 from src.transaccion import Transaccion
 
-
+class LimiteExcedidoError(Exception): pass
 class SaldoInsuficienteError(Exception):
     """Excepción personalizada para saldo insuficiente."""
     pass

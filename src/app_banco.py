@@ -5,6 +5,8 @@ from src.tarjeta import Tarjeta
 from src.transaccion import Transaccion
 from src.cuenta_ahorro import CuentaAhorro
 
+class SaldoInsuficienteError(Exception): pass
+class LimiteExcedidoError(Exception): pass #
 def main(page: ft.Page):
     page.title = "Registro Financiero POO"
     page.vertical_alignment = ft.MainAxisAlignment.START
@@ -34,6 +36,27 @@ def main(page: ft.Page):
                     historial_column.controls.append(ft.Text(t.__str__(), size=12, color=color, font_family="monospace"))
         page.update()
 
+    def actualizar_historial_tarjeta():
+    
+        historial_tarjeta_column.controls.clear()
+        
+        if estado["tarjeta"]:
+            # La clase Tarjeta usa get_movimientos() para obtener la lista de tuplas
+            movimientos = estado["tarjeta"].get_movimientos()
+            if not movimientos:
+                historial_tarjeta_column.controls.append(ft.Text("No hay movimientos registrados.", italic=True))
+            else:
+                # Mostrar movimientos en orden inverso (más reciente primero)
+                for fecha, monto, tipo in reversed(movimientos):
+                    # Asignar color basado en el tipo de movimiento (Compra=Deuda, Pago=Reducción)
+                    color = ft.Colors.RED_700 if tipo == "Compra" else ft.Colors.GREEN_700
+                    
+                    movimiento_str = f"{fecha.strftime('%Y-%m-%d %H:%M:%S')} | {tipo.upper():<10} | ${monto:.2f}"
+                    
+                    historial_tarjeta_column.controls.append(
+                        ft.Text(movimiento_str, size=12, color=color, font_family="monospace")
+                    )
+        page.update()
     def actualizar_saldo_cuenta():
         if estado["cuenta"]:
             lbl_saldo_cuenta.value = f"Saldo Actual: ${estado['cuenta'].get_saldo():.2f}"
@@ -91,7 +114,12 @@ def main(page: ft.Page):
         content=ft.Column([ft.Text("Historial de Transacciones", size=18, weight=ft.FontWeight.BOLD), historial_column], horizontal_alignment=ft.CrossAxisAlignment.START, spacing=10),
         padding=10, border_radius=10, border=ft.border.all(1, ft.Colors.GREY_300), width=350, visible=False
     )
-    
+    # --- Historial de Movimientos de Tarjeta (NUEVO) ---
+    historial_tarjeta_column = ft.Column([ft.Text("No hay movimientos registrados.", italic=True)], scroll=ft.ScrollMode.ADAPTIVE, height=150)
+    historial_tarjeta_container = ft.Container(
+        content=ft.Column([ft.Text("Historial de Tarjeta", size=18, weight=ft.FontWeight.BOLD), historial_tarjeta_column], horizontal_alignment=ft.CrossAxisAlignment.START, spacing=10),
+        padding=10, border_radius=10, border=ft.border.all(1, ft.Colors.GREY_300), width=350, visible=False
+    )
     # Contenedores de Formulario y Operaciones
     cuenta_form_container = ft.Column(
         [ft.Text("2. Crear Cuenta", size=20, weight=ft.FontWeight.BOLD), dropdown_tipo_cuenta, txt_nro_cuenta, txt_saldo_inicial, txt_interes, btn_crear_cuenta],
@@ -122,7 +150,18 @@ def main(page: ft.Page):
         content=ft.Column([lbl_saldo_cuenta, txt_monto_cuenta, ft.Row([btn_depositar, btn_retirar], alignment=ft.MainAxisAlignment.CENTER), btn_aplicar_interes], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10), visible=False, width=350, padding=10
     )
     operaciones_tarjeta_container = ft.Container(
-        content=ft.Column([lbl_limite_tarjeta, lbl_saldo_tarjeta, txt_monto_tarjeta, ft.Row([btn_comprar, btn_pagar], alignment=ft.MainAxisAlignment.CENTER)], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10), visible=False, width=350, padding=10
+        content=ft.Column(
+            [
+                lbl_limite_tarjeta, 
+                lbl_saldo_tarjeta, 
+                txt_monto_tarjeta, 
+                ft.Row([btn_comprar, btn_pagar], alignment=ft.MainAxisAlignment.CENTER),
+                historial_tarjeta_container
+            ],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=10
+        ),  
+        visible=False, width=350, padding=10
     )
 
     # ----------------- Lógica del Negocio (Manejadores) -----------------
@@ -243,6 +282,7 @@ def main(page: ft.Page):
             limite = float(txt_limite_tarjeta.value)
             nueva_tarjeta = Tarjeta(numero=nro_tarjeta, cliente=estado["cliente"], limite=limite)
             estado["tarjeta"] = nueva_tarjeta
+            historial_tarjeta_container.visible = True
             
             mostrar_notificacion(f"💳 Tarjeta emitida: Nro {nueva_tarjeta.get_numero()}", ft.Colors.INDIGO_700)
             tarjeta_form_container.disabled = True
@@ -283,7 +323,11 @@ def main(page: ft.Page):
             estado["tarjeta"].realizar_compra(monto)
             mostrar_notificacion(f"🛍️ Compra de ${monto:.2f} realizada.", ft.Colors.ORANGE_700)
             actualizar_saldo_tarjeta()
-        except LimiteExcedidoError as ex: mostrar_notificacion(f"❌ Error Compra: {ex}", ft.Colors.RED_700)
+            actualizar_historial_tarjeta()
+        except LimiteExcedidoError as ex: 
+            mostrar_notificacion(f"❌ Error Compra: {ex}", ft.Colors.RED_700)
+        except ValueError as ex: 
+            mostrar_notificacion(f"❌ Error Compra: {ex}", ft.Colors.RED_700)
 
     def pagar_tarjeta(e):
         try:
@@ -291,6 +335,7 @@ def main(page: ft.Page):
             estado["tarjeta"].pagar_tarjeta(monto)
             mostrar_notificacion(f"💵 Pago de ${monto:.2f} realizado.", ft.Colors.GREEN_700)
             actualizar_saldo_tarjeta()
+            actualizar_historial_tarjeta()
         except ValueError as ex: mostrar_notificacion(f"❌ Error Pago: {ex}", ft.Colors.RED_700)
 
     # Asignar eventos
