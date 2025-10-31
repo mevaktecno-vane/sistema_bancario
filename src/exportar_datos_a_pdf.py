@@ -65,3 +65,44 @@ if cuenta_actual:
     else:
         pdf.cell(90, 5, 'No se registraron transacciones.', 1, 1, 'C')
     pdf.ln(5)
+
+# ---DATOS DE LA TARJETA DE CRÉDITO ---
+    
+if tarjeta_actual:
+    pdf.set_fill_color(255, 220, 220)
+    pdf.set_font('Arial', 'B', 12)
+    pdf.cell(0, 8, 'TARJETA DE CRÉDITO', 1, 1, 'L', True)
+
+    pdf.set_font('Arial', '', 10)
+    pdf.cell(40, 6, 'Nro Tarjeta:', 0, 0)
+    pdf.cell(0, 6, f'{tarjeta_actual._Tarjeta__numero}', 0, 1)
+        
+    pdf.cell(40, 6, 'Límite Total:', 0, 0)
+    pdf.cell(0, 6, f'${tarjeta_actual.get_limite():.2f}', 0, 1)
+        
+    pdf.cell(40, 6, 'DEUDA ACTUAL:', 0, 0)
+    pdf.set_font('Arial', 'B', 10)
+    pdf.cell(0, 6, f'${tarjeta_actual.get_saldo_actual():.2f}', 0, 1)
+    pdf.ln(2)
+        
+    # --- Historial de Movimientos de Tarjeta ---
+    pdf.set_font('Arial', 'U', 11)
+    pdf.cell(0, 6, 'Historial de Movimientos:', 0, 1)
+        
+    pdf.set_font('Arial', 'B', 8)
+    pdf.cell(40, 5, 'FECHA/HORA', 1, 0, 'C')
+    pdf.cell(30, 5, 'TIPO', 1, 0, 'C')
+    pdf.cell(20, 5, 'MONTO', 1, 1, 'C')
+
+    pdf.set_font('Arial', '', 8)
+    movimientos = tarjeta_actual._Tarjeta__movimientos # Acceso directo a la lista de tuplas
+    if movimientos:
+        for fecha, monto, tipo in movimientos:
+            fecha_str = fecha.strftime('%Y-%m-%d %H:%M:%S')
+            monto_str = f'${monto:.2f}'
+            pdf.cell(40, 5, fecha_str, 1, 0)
+            pdf.cell(30, 5, tipo.upper(), 1, 0)
+            pdf.cell(20, 5, monto_str, 1, 1, 'R')
+    else:
+        pdf.cell(90, 5, 'No se registraron movimientos.', 1, 1, 'C')
+    pdf.ln(5)

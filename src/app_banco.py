@@ -23,7 +23,7 @@ def main(page: ft.Page):
         text="Exportar datos en PDF",
         icon=ft.Icons.PICTURE_AS_PDF,
         # La función se definirá a continuación
-        #on_click=exportar_datos_a_pdf, 
+        on_click=exportar_datos_a_pdf, 
         bgcolor=ft.Colors.RED_700,
         color=ft.Colors.WHITE
     )
@@ -92,7 +92,7 @@ def main(page: ft.Page):
         cliente_actual = estado["cliente"]
         cuenta_actual = estado["cuenta"]
         tarjeta_actual = estado["tarjeta"]
-        #exportar_a_pdf(cliente_actual, cuenta_actual, tarjeta_actual)
+        exportar_a_pdf(cliente_actual, cuenta_actual, tarjeta_actual)
         mostrar_notificacion(f"💾 Iniciando exportación a PDF para {cliente_actual.get_nombre()}...", ft.Colors.RED_400, 5000)
 
     # --- UI: Cliente ---
