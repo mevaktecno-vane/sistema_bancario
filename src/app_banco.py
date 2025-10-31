@@ -6,425 +6,250 @@ from src.transaccion import Transaccion
 from src.cuenta_ahorro import CuentaAhorro
 
 def main(page: ft.Page):
-    # Configuración básica de la página
-    def show_alert(title: str, message: str, icon: ft.Icons, color=ft.Colors.RED):
-    # Función local que puede acceder a 'page'
-        def close_dlg(e):
-            page.dialog.open = False
-            page.update()
-        
-        dlg = ft.AlertDialog(
-            modal=True,
-            title=ft.Row([ft.Icon(icon, color=color), ft.Text(title)]),
-            content=ft.Text(message),
-            actions=[
-                ft.TextButton("Ok", on_click=close_dlg),
-            ],
-            actions_alignment=ft.MainAxisAlignment.END,
-        )
+    page.title = "Registro Financiero POO"
+    page.vertical_alignment = ft.MainAxisAlignment.START
+    page.padding = 30
+    page.scroll = ft.ScrollMode.ADAPTIVE
     
-        page.dialog = dlg
-        dlg.open = True
+    estado = {"cliente": None, "cuenta": None, "tarjeta": None} 
+
+    # --- Funciones Auxiliares ---
+    def mostrar_notificacion(texto, color=ft.Colors.GREEN_700):
+        page.snack_bar = ft.SnackBar(ft.Text(texto), bgcolor=color, duration=3000)
+        page.snack_bar.open = True
         page.update()
-
-
-    page.title = "Banco estudiantil San Martín"
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-    page.theme_mode = ft.ThemeMode.LIGHT
-    page.padding = 20
-    page.update()
-    nombre_input = ft.TextField(label="Nombre", width=200)
-    apellido_input = ft.TextField(label="Apellido", width=200)
-    dni_input = ft.TextField(label="DNI", width=200)
-    nro_cuenta_input = ft.TextField(label="Nro de Cuenta", width=200, value="0001") 
-    saldo_input = ft.TextField(label="Saldo Inicial", width=200, value="0.0") 
-    transaction_list_cc = ft.Column()
-    mi_cliente = Cliente(nombre="Daniel", apellido="Perez", dni="12345678") 
-    mi_cuenta = CuentaAhorro(nro_cuenta="12345", cliente=mi_cliente, saldo=1000.0, interes=1.0)
-    mi_tarjeta = Tarjeta(numero="9876-5432-1098-7654", cliente=mi_cliente)
-
-    
-    def manejar_nuevo_cliente(e):
-        nonlocal mi_cliente, mi_cuenta, mi_tarjeta
-        mi_cliente = Cliente(nombre=nombre_input.value, apellido=apellido_input.value, dni=dni_input.value)
-        mi_cuenta = CuentaAhorro(nro_cuenta=nro_cuenta_input.value, cliente=mi_cliente, saldo=float(saldo_input.value), interes=1.0)
-        mi_tarjeta = Tarjeta(numero="9876-5432-1098-7654", cliente=mi_cliente)
         
-    # --- Nueva Variable para el Card que Muestra los Datos ---
-    cliente_data_card = ft.Card(
-        content=ft.ListTile(
-        leading=ft.Icon(ft.Icons.PERSON, color=ft.Colors.BLUE_GREY_700, size=30),
-        title=ft.Text(f"Nombre Completo: {mi_cliente.get_nombre()} {mi_cliente.get_apellido()}", weight=ft.FontWeight.BOLD),
-        subtitle=ft.Text(f"DNI: {mi_cliente.get_dni()}"),
-    ),
-    elevation=4
-    )
-    page.update()
-   
-    # Actualizar la sección de Cliente
-    cliente_info = ft.Column(
-        [
-            ft.Text("Información del Cliente", size=24, weight=ft.FontWeight.W_600),
-            ft.Container(height=80, content=ft.Text("Cargando cliente...")),
-            cliente_data_card, 
-            ft.Divider(),
-            # Formulario para Nuevo Cliente (el fragmento que me pasaste)
-            ft.Text("Nuevo Cliente y Cuentas:", size=20, weight=ft.FontWeight.W_500),
-            ft.Row([nombre_input, apellido_input]),
-            ft.Row([dni_input, nro_cuenta_input]),
-            ft.Row([saldo_input]),
-            ft.ElevatedButton(
-                text="Crear Nuevo Cliente",
-                icon=ft.Icons.SAVE,
-                on_click=manejar_nuevo_cliente, 
-                style=ft.ButtonStyle(bgcolor=ft.Colors.BLUE_500, color=ft.Colors.WHITE)
-            )
-        ],
-        
-        spacing=20,
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER
-    )
-
-    cliente_info.controls[1] = ft.Card(
-        content=ft.ListTile(
-            leading=ft.Icon(ft.Icons.PERSON, color=ft.Colors.BLUE_GREY_700, size=30),
-            title=ft.Text(f"Nombre Completo: {mi_cliente.get_nombre()} {mi_cliente.get_apellido()}", weight=ft.FontWeight.BOLD),
-            subtitle=ft.Text(f"DNI: {mi_cliente.get_dni()}"),
-        ),
-        elevation=4
-    )
-    # --- Función para Crear Nuevo Cliente ---
-    
-    # Intentar crear un nuevo cliente con los datos del formulario
-    try:
-        nuevo_saldo = float(saldo_input.value)
-        
-        # 1. Crea el nuevo Cliente
-        mi_cliente = Cliente(
-            nombre=nombre_input.value,   
-            apellido=apellido_input.value,  
-            dni=dni_input.value  
-        )
-        # 2. Crea la nueva Cuenta y Tarjeta (asociadas al nuevo cliente)
-        mi_cuenta = CuentaAhorro(
-            nro_cuenta=nro_cuenta_input.value,
-            cliente=mi_cliente,
-            saldo=nuevo_saldo,
-            interes=1.0 # Tasa de interés por defecto
-        )
-        mi_tarjeta = Tarjeta(
-            numero="9876-xxxx-xxxx-7654", # Un número de tarjeta simple
-            cliente=mi_cliente
-        )
-        
-        # 3. Actualizar la UI con la nueva información
-
-
-        # Actualizar todos los controles dependientes
-        actualizar_saldo() 
-        actualizar_tarjeta()
-        
-        show_alert("Éxito", f"Cliente {mi_cliente.get_nombre()} agregado con éxito.", ft.Icons.PERSON_ADD, ft.Colors.BLUE_500)
-        
-    except Exception as ex:
-        show_alert("Error de Creación", f"Error al crear: {ex}", ft.Icons.ERROR)
-    
-    # Reemplazamos el control existente con uno nuevo
-        cliente_data_card.content = ft.ListTile(
-            leading=ft.Icon(ft.Icons.PERSON, color=ft.Colors.BLUE_GREY_700, size=30),
-            title=ft.Text(f"Nombre Completo: {mi_cliente.get_nombre()} {mi_cliente.get_apellido()}", weight=ft.FontWeight.BOLD),
-            subtitle=ft.Text(f"DNI: {mi_cliente.get_dni()}"),
-        )
-   
-    page.update()
-    # Campo de entrada para el importe
-
-    cantidad_entrada = ft.TextField(
-        label="Monto ($)", 
-        width=150, 
-        input_filter=ft.InputFilter(allow=True, regex_string=r"[0-9.]"),
-        keyboard_type=ft.KeyboardType.NUMBER
-    )
-
-    def actualizar_saldo():
-        """"Actualiza el saldo de la cuenta y la lista de transacciones."."""
-        current_balance_cc.value = f"${mi_cuenta.get_saldo():.2f}"
-        
-    # Reconstruir lista de transacciones
-
-    transaction_list_cc.controls.clear()
-        
-    transactions = mi_cuenta.mostrar_transacciones()
-    if not transactions:
-            transaction_list_cc.controls.append(ft.Text("No hay transacciones aún.", italic=True, color=ft.Colors.BLACK54))
-    else:
-            for t in reversed(transactions): # Show most recent first
-                color = ft.Colors.GREEN_700 if t.get_tipo() == 'deposito' else ft.Colors.RED_700
-                transaction_list_cc.controls.append(
-                    ft.Text(f"{t}", color=color, font_family="monospace")
-                )
-
-    page.update()
-
-    # --- Sección cuenta ---
-
-    # Componentes que se actualizan en tiempo real
-
-    current_balance_cc = ft.Text(f"${mi_cuenta.get_saldo():.2f}", size=32, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_ACCENT_700)
-    transaction_list_cc = ft.Column(scroll=ft.ScrollMode.AUTO, height=200, spacing=8)
-
-    def manejar_operacion(tipo_operacion: str, e):
-        """Gestiona las operaciones de depósito y retiro."""
-        try:
-            monto = float(cantidad_entrada.value)
-            
-            if tipo_operacion == "depositar":
-                mi_cuenta.depositar(monto)
-                show_alert("Éxito", f"Depósito de ${monto:.2f} realizado con éxito.", ft.Icons.CHECK_CIRCLE)
-            elif tipo_operacion == "retirar":
-                mi_cuenta.retirar(monto)
-                show_alert("Éxito", f"Retiro de ${monto:.2f} realizado con éxito.", ft.Icons.CHECK_CIRCLE)
-            
-            cantidad_entrada.value = "" # Limpiar input
-            actualizar_saldo() 
-            
-        except ValueError as ex:
-            show_alert("Error de Monto", "Por favor, ingrese un monto positivo válido.", ft.Icons.WARNING_AMBER_ROUNDED)
-        except SaldoInsuficienteError as ex:
-            show_alert("Error de Saldo", str(ex), ft.Icons.ERROR)
-        except Exception as ex:
-            show_alert("Error Inesperado", f"Ocurrió un error: {ex}", ft.Icons.BUG_REPORT)
-
-    cuenta_controles = ft.Container(
-        content=ft.Column([
-            ft.Text("Cuenta", size=24, weight=ft.FontWeight.W_600),
-            ft.Text(f"Nro de Cuenta: {mi_cuenta.get_nro_cuenta()}", size=16, color=ft.Colors.BLACK54),
-            ft.Card(
-                content=ft.Container(
-                    ft.Column([
-                        ft.Text("Saldo Actual:", size=20, color=ft.Colors.BLACK87),
-                        current_balance_cc
-                    ]),
-                    padding=15,
-                    alignment=ft.alignment.center_left
-                )
-            ),
-            ft.Row([
-                cantidad_entrada,
-                ft.ElevatedButton(
-                    text="Depositar", 
-                    icon=ft.Icons.ADD_CIRCLE, 
-                    on_click=lambda e: manejar_operacion("depositar", e),
-                    style=ft.ButtonStyle(bgcolor=ft.Colors.GREEN_500, color=ft.Colors.WHITE, shape=ft.RoundedRectangleBorder(radius=10))
-                ),
-                ft.ElevatedButton(
-                    text="Retirar", 
-                    icon=ft.Icons.REMOVE_CIRCLE, 
-                    on_click=lambda e: manejar_operacion("retirar", e),
-                    style=ft.ButtonStyle(bgcolor=ft.Colors.RED_500, color=ft.Colors.WHITE, shape=ft.RoundedRectangleBorder(radius=10))
-                ),
-            ], alignment=ft.MainAxisAlignment.CENTER),
-            ft.Divider(height=25),
-            ft.Text("Historial de Transacciones:", size=18, weight=ft.FontWeight.W_500),
-            ft.Container(transaction_list_cc, border=ft.border.all(1, ft.Colors.BLACK26), border_radius=10, padding=10, expand=True)
-        ], spacing=15),
-        padding=20,
-        width=600,
-    )
-    
-    # --- Sección de cuenta de ahorros ---
-    
-    saldo_actual_ca = ft.Text(f"${mi_cuenta.get_saldo():.2f}", size=32, weight=ft.FontWeight.BOLD, color=ft.Colors.TEAL_ACCENT_700)
-    texto_tasa_interes = ft.Text(f"Tasa de Interés: {mi_cuenta.get_interes() * 100:.2f}%", size=18, color=ft.Colors.TEAL_800)
-
-    def click_aplicar_interes(e):
-        """Applies interest to the savings account."""
-        try:
-            interes_ganado = mi_cuenta.aplicar_interes()
-            saldo_actual_ca.value = f"${mi_cuenta.get_saldo():.2f}"
-            
-            if interes_ganado > 0:
-                show_alert("Intereses Aplicados", f"¡Felicidades! Se aplicó un interés de ${interes_ganado:.2f} a la cuenta de ahorro.", ft.Icons.MONETIZATION_ON, ft.Colors.YELLOW_700)
+    def actualizar_historial_transacciones():
+        historial_column.controls.clear()
+        if estado["cuenta"]:
+            transacciones = estado["cuenta"].get_transacciones()
+            if not transacciones:
+                 historial_column.controls.append(ft.Text("No hay transacciones registradas.", italic=True))
             else:
-                show_alert("Intereses Aplicados", "El saldo es cero o negativo, no se generaron intereses.", ft.Icons.INFO_OUTLINE)
-            
-            # Actualizamos el saldo de la cuenta y la lista de transacciones, ya que la transacción está registrada allí (en la clase base).
-            actualizar_saldo() 
-            page.update()
-        except Exception as ex:
-            show_alert("Error", f"Error al aplicar interés: {ex}", ft.Icons.BUG_REPORT)
-
-    controles_ca = ft.Container(
-        content=ft.Column([
-            ft.Text("Cuenta de Ahorro", size=24, weight=ft.FontWeight.W_600),
-            ft.Text(f"Nro de Cuenta: {mi_cuenta.get_nro_cuenta()}", size=16, color=ft.Colors.BLACK54),
-            ft.Card(
-                content=ft.Container(
-                    ft.Column([
-                       ft.Text("Saldo Actual:", size=20, color=ft.Colors.BLACK87),
-                        saldo_actual_ca,
-                        ft.Divider(),
-                        texto_tasa_interes
-                    ]),
-                    padding=15,
-                    alignment=ft.alignment.center_left
-                )
-            ),
-            ft.ElevatedButton(
-                text="Aplicar Intereses Ahora", 
-                icon=ft.Icons.CALCULATE, 
-                on_click=click_aplicar_interes,
-                style=ft.ButtonStyle(bgcolor=ft.Colors.TEAL_300, color=ft.Colors.BLACK, shape=ft.RoundedRectangleBorder(radius=10)),
-                width=300
-            ),
-        ], spacing=20, horizontal_alignment=ft.CrossAxisAlignment.CENTER),
-        padding=20,
-        width=600
-    )
-
-    #--- Sección tarjeta - operaciones ---
-
-    #Componentes que se actualizan en tiempo real
-
-    current_debt_card = ft.Text(f"${mi_tarjeta.get_saldo_actual():.2f}", size=32, weight=ft.FontWeight.BOLD)
-    movement_list_card = ft.Column(scroll=ft.ScrollMode.AUTO, height=200, spacing=8)
-
-    # Campo de entrada para el importe
-
-    amount_input_card = ft.TextField(
-        label="Monto ($)", 
-        width=150, 
-        input_filter=ft.InputFilter(allow=True, regex_string=r"[0-9.]"),
-        keyboard_type=ft.KeyboardType.NUMBER
-    )
-    
-    def actualizar_tarjeta():
-        """Actualiza la lista de deudas y movimientos de tarjetas."""
-        
-        # Color del texto de la deuda según el nivel de deuda
-        debt_ratio = mi_tarjeta.get_saldo_actual() / mi_tarjeta.get_limite() if mi_tarjeta.get_limite() > 0 else 0
-        
-        if debt_ratio > 0.8:
-            current_debt_card.color = ft.Colors.RED_800
-        elif debt_ratio > 0.4:
-            current_debt_card.color = ft.Colors.AMBER_800
-        else:
-            current_debt_card.color = ft.Colors.BLUE_GREY_700
-            
-        current_debt_card.value = f"${mi_tarjeta.get_saldo_actual():.2f}"
-
-         # Lista de movimiento de reconstrucción
-
-        movement_list_card.controls.clear()
-        
-        movements = mi_tarjeta.get_movimientos()
-        if not movements:
-            movement_list_card.controls.append(ft.Text("No hay movimientos aún.", italic=True, color=ft.Colors.BLACK54))
-        else:
-            for m in reversed(movements):
-                color = ft.Colors.RED_700 if m.startswith('Compra') else ft.Colors.GREEN_700
-                movement_list_card.controls.append(
-                    ft.Text(f"{m}", color=color, font_family="monospace")
-                )
-
+                for t in reversed(transacciones):
+                    color = ft.Colors.GREEN_700 if t.get_tipo() in ["deposito", "interes"] else ft.Colors.RED_700
+                    historial_column.controls.append(ft.Text(t.__str__(), size=12, color=color, font_family="monospace"))
         page.update()
 
-    def manejar_operacion_tarjeta(tipo_operacion: str, e):
-        """Gestiona las operaciones de compra y pago."""
+    def actualizar_saldo_cuenta():
+        if estado["cuenta"]:
+            lbl_saldo_cuenta.value = f"Saldo Actual: ${estado['cuenta'].get_saldo():.2f}"
+            actualizar_historial_transacciones()
+        page.update()
+        
+    def actualizar_saldo_tarjeta():
+        if estado["tarjeta"]:
+            lbl_limite_tarjeta.value = f"Límite Total: ${estado['tarjeta'].get_limite():.2f}"
+            lbl_saldo_tarjeta.value = f"Deuda Actual: ${estado['tarjeta'].get_saldo_actual():.2f}"
+        page.update()
+
+    # --- UI: Cliente ---
+    txt_nombre = ft.TextField(label="Nombre", width=300)
+    txt_apellido = ft.TextField(label="Apellido", width=300)
+    # ✅ CORRECCIÓN FINAL: Solo dígitos (r"[0-9]")
+    txt_dni = ft.TextField(label="DNI", width=300, input_filter=ft.InputFilter(r"[0-9]"))
+    btn_registrar_cliente = ft.ElevatedButton(text="Registrar Cliente", icon=ft.Icons.PERSON_ADD)
+    
+    # --- UI: Cuenta ---
+    txt_nro_cuenta = ft.TextField(label="Número de Cuenta", width=300)
+    # ✅ CORRECCIÓN FINAL: Dígitos y punto decimal (r"[0-9\.]")
+    txt_saldo_inicial = ft.TextField(label="Saldo Inicial", width=300, value="0.0", input_filter=ft.InputFilter(r"[0-9\.]"))
+    # ✅ CORRECCIÓN FINAL: Dígitos y punto decimal (r"[0-9\.]")
+    txt_interes = ft.TextField(label="Tasa de Interés (%)", width=300, value="1.0", visible=False, input_filter=ft.InputFilter(r"[0-9\.]"))
+    dropdown_tipo_cuenta = ft.Dropdown(width=300, label="Tipo de Cuenta", options=[ft.dropdown.Option("Base"), ft.dropdown.Option("Ahorro")], value="Base")
+    btn_crear_cuenta = ft.ElevatedButton(text="Crear Cuenta", icon=ft.Icons.ACCOUNT_BALANCE)
+    
+    # Operaciones Cuenta
+    lbl_saldo_cuenta = ft.Text("Saldo Actual: $0.00", size=16, weight=ft.FontWeight.BOLD)
+    # ✅ CORRECCIÓN FINAL: Dígitos y punto decimal (r"[0-9\.]")
+    txt_monto_cuenta = ft.TextField(label="Monto (Depósito/Retiro)", width=300, input_filter=ft.InputFilter(r"[0-9\.]"))
+    btn_depositar = ft.ElevatedButton(text="Depositar", icon=ft.Icons.ARROW_UPWARD, disabled=True)
+    btn_retirar = ft.ElevatedButton(text="Retirar", icon=ft.Icons.ARROW_DOWNWARD, disabled=True)
+    btn_aplicar_interes = ft.ElevatedButton(text="Aplicar Interés", icon=ft.Icons.REPLAY_10, disabled=True, visible=False)
+
+    # --- UI: Tarjeta ---
+    # ✅ CORRECCIÓN FINAL: Solo dígitos (r"[0-9]")
+    txt_nro_tarjeta = ft.TextField(label="Número de Tarjeta", width=300, input_filter=ft.InputFilter(r"[0-9]"))
+    # ✅ CORRECCIÓN FINAL: Dígitos y punto decimal (r"[0-9\.]")
+    txt_limite_tarjeta = ft.TextField(label="Límite de Crédito", width=300, value="10000.0", input_filter=ft.InputFilter(r"[0-9\.]"))
+    btn_crear_tarjeta = ft.ElevatedButton(text="Emitir Tarjeta", icon=ft.Icons.CREDIT_CARD)
+
+    # Operaciones Tarjeta
+    lbl_limite_tarjeta = ft.Text("Límite Total: $0.00", size=16, weight=ft.FontWeight.BOLD)
+    lbl_saldo_tarjeta = ft.Text("Deuda Actual: $0.00", size=16, weight=ft.FontWeight.BOLD)
+    # ✅ CORRECCIÓN FINAL: Dígitos y punto decimal (r"[0-9\.]")
+    txt_monto_tarjeta = ft.TextField(label="Monto (Compra/Pago)", width=300, input_filter=ft.InputFilter(r"[0-9\.]"))
+    btn_comprar = ft.ElevatedButton(text="Realizar Compra", icon=ft.Icons.SHOPPING_CART, disabled=True)
+    btn_pagar = ft.ElevatedButton(text="Pagar Tarjeta", icon=ft.Icons.PAYMENT, disabled=True)
+    
+    # --- Historial de Transacciones (¡Mantenido!) ---
+    historial_column = ft.Column([ft.Text("No hay transacciones registradas.", italic=True)], scroll=ft.ScrollMode.ADAPTIVE, height=150)
+    historial_container = ft.Container(
+        content=ft.Column([ft.Text("Historial de Transacciones", size=18, weight=ft.FontWeight.BOLD), historial_column], horizontal_alignment=ft.CrossAxisAlignment.START, spacing=10),
+        padding=10, border_radius=10, border=ft.border.all(1, ft.Colors.GREY_300), width=350, visible=False
+    )
+    
+    # Contenedores de Formulario y Operaciones
+    cuenta_form_container = ft.Column(
+        [ft.Text("2. Crear Cuenta", size=20, weight=ft.FontWeight.BOLD), dropdown_tipo_cuenta, txt_nro_cuenta, txt_saldo_inicial, txt_interes, btn_crear_cuenta],
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10, disabled=True,
+    )
+    tarjeta_form_container = ft.Column(
+        [ft.Text("3. Emitir Tarjeta", size=20, weight=ft.FontWeight.BOLD), txt_nro_tarjeta, txt_limite_tarjeta, btn_crear_tarjeta],
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10, disabled=True,
+    )
+    operaciones_cuenta_container = ft.Container(
+        content=ft.Column([lbl_saldo_cuenta, txt_monto_cuenta, ft.Row([btn_depositar, btn_retirar], alignment=ft.MainAxisAlignment.CENTER), btn_aplicar_interes], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10), visible=False, width=350, padding=10
+    )
+    operaciones_tarjeta_container = ft.Container(
+        content=ft.Column([lbl_limite_tarjeta, lbl_saldo_tarjeta, txt_monto_tarjeta, ft.Row([btn_comprar, btn_pagar], alignment=ft.MainAxisAlignment.CENTER)], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10), visible=False, width=350, padding=10
+    )
+
+    # ----------------- Lógica del Negocio (Manejadores) -----------------
+    
+    def registrar_cliente(e):
+        nombre, apellido, dni = txt_nombre.value, txt_apellido.value, txt_dni.value
         try:
-            monto = float(actualizar_tarjeta.value)
-            
-            if tipo_operacion == "compra":
-                mi_tarjeta.realizar_compra(monto)
-                show_alert("Éxito", f"Compra de ${monto:.2f} registrada.", ft.Icons.SHOPPING_BAG, ft.Colors.RED_500)
-            elif tipo_operacion == "pago":
-                mi_tarjeta.pagar_tarjeta(monto)
-                show_alert("Éxito", f"Pago de ${monto:.2f} aplicado. Deuda restante: ${mi_tarjeta.get_saldo_actual():.2f}", ft.Icons.RECEIPT, ft.Colors.GREEN_500)
-            
-            amount_input_card.value = "" # Limpiar input
-            actualizar_tarjeta() # Actualizar la tarjeta
+            nuevo_cliente = Cliente(nombre, apellido, dni)
+            estado["cliente"] = nuevo_cliente
+            mostrar_notificacion(f"✅ Cliente registrado: {nuevo_cliente.__str__()}", ft.Colors.BLUE_700)
+            btn_registrar_cliente.disabled = True
+            cuenta_form_container.disabled = False
+            tarjeta_form_container.disabled = False
+            page.update()
         except ValueError as ex:
-            show_alert("Error de Monto", "Por favor, ingrese un monto positivo válido.", ft.Icons.WARNING_AMBER_ROUNDED)
-        except LimiteExcedidoError as ex:
-            show_alert("Límite Excedido", str(ex), ft.Icons.ERROR)
-        except Exception as ex:
-            show_alert("Error Inesperado", f"Ocurrió un error: {ex}", ft.Icons.BUG_REPORT)
+            mostrar_notificacion(f"❌ Error Cliente: {ex}", ft.Colors.RED_700)
+            
+    def crear_cuenta(e):
+        nro_cuenta, tipo_cuenta = txt_nro_cuenta.value, dropdown_tipo_cuenta.value
+        if estado["cliente"] is None: mostrar_notificacion("❌ Error: Primero debe registrar un cliente.", ft.Colors.RED_700); return
+        try:
+            saldo_inicial = float(txt_saldo_inicial.value)
+            if tipo_cuenta == "Ahorro":
+                interes = float(txt_interes.value)
+                nueva_cuenta = CuentaAhorro(nro_cuenta=nro_cuenta, cliente=estado["cliente"], saldo=saldo_inicial, interes=interes)
+                btn_aplicar_interes.visible = True
+            else:
+                nueva_cuenta = Cuenta(nro_cuenta=nro_cuenta, cliente=estado["cliente"], saldo=saldo_inicial)
+                btn_aplicar_interes.visible = False
 
-    card_controls = ft.Container(
-        content=ft.Column([
-            ft.Text("Tarjeta de Crédito", size=24, weight=ft.FontWeight.W_600),
-            ft.Text(f"Nro de Tarjeta: {mi_tarjeta.get_numero()}", size=16, color=ft.Colors.BLACK54),
-            ft.Text(f"Límite de Crédito: ${mi_tarjeta.get_limite():.2f}", size=18, color=ft.Colors.BLUE_GREY_700),
-            ft.Card(
-                content=ft.Container(
-                    ft.Column([
-                        ft.Text("Deuda Actual:", size=20, color=ft.Colors.BLACK87),
-                        current_debt_card
-                    ]),
-                    padding=15,
-                    alignment=ft.alignment.center_left
-                )
-            ),
-            ft.Row([
-                amount_input_card,
-                ft.ElevatedButton(
-                    text="Realizar Compra", 
-                    icon=ft.Icons.SHOPPING_CART, 
-                    on_click=lambda e: manejar_operacion_tarjeta("compra", e),
-                    style=ft.ButtonStyle(bgcolor=ft.Colors.RED_500, color=ft.Colors.WHITE, shape=ft.RoundedRectangleBorder(radius=10))
-                ),
-                ft.ElevatedButton(
-                    text="Pagar Tarjeta", 
-                    icon=ft.Icons.PAYMENT, 
-                    on_click=lambda e: manejar_operacion_tarjeta("pago", e),
-                    style=ft.ButtonStyle(bgcolor=ft.Colors.GREEN_500, color=ft.Colors.WHITE, shape=ft.RoundedRectangleBorder(radius=10))
-                ),
-            ], alignment=ft.MainAxisAlignment.CENTER),
-            ft.Divider(height=25),
-            ft.Text("Historial de Movimientos:", size=18, weight=ft.FontWeight.W_500),
-            ft.Container(movement_list_card, border=ft.border.all(1, ft.Colors.BLACK26), border_radius=10, padding=10, expand=True)
-        ], spacing=15),
-        padding=20,
-        width=600,
+            estado["cuenta"] = nueva_cuenta
+            mostrar_notificacion(f"🎉 ¡Éxito! {nueva_cuenta.__str__()} ", ft.Colors.GREEN_700)
+            cuenta_form_container.disabled = True
+            operaciones_cuenta_container.visible = True
+            historial_container.visible = True
+            btn_depositar.disabled = btn_retirar.disabled = False
+            actualizar_saldo_cuenta()
+
+        except ValueError as ex: mostrar_notificacion(f"❌ Error Cuenta: {ex}", ft.Colors.RED_700)
+
+    def crear_tarjeta(e):
+        nro_tarjeta = txt_nro_tarjeta.value
+        if estado["cliente"] is None: mostrar_notificacion("❌ Error: Primero debe registrar un cliente.", ft.Colors.RED_700); return
+        try:
+            limite = float(txt_limite_tarjeta.value)
+            nueva_tarjeta = Tarjeta(numero=nro_tarjeta, cliente=estado["cliente"], limite=limite)
+            estado["tarjeta"] = nueva_tarjeta
+            
+            mostrar_notificacion(f"💳 Tarjeta emitida: Nro {nueva_tarjeta.get_numero()}", ft.Colors.INDIGO_700)
+            tarjeta_form_container.disabled = True
+            operaciones_tarjeta_container.visible = True
+            btn_comprar.disabled = btn_pagar.disabled = False
+            actualizar_saldo_tarjeta()
+
+        except ValueError as ex: mostrar_notificacion(f"❌ Error Tarjeta: {ex}", ft.Colors.RED_700)
+            
+    def depositar(e):
+        try:
+            monto = float(txt_monto_cuenta.value)
+            estado["cuenta"].depositar(monto)
+            mostrar_notificacion(f"✅ Depósito exitoso de ${monto:.2f}.", ft.Colors.BLUE_GREY_700)
+            actualizar_saldo_cuenta()
+        except Exception as ex: mostrar_notificacion(f"❌ Error: {ex}", ft.Colors.RED_700)
+
+    def retirar(e):
+        try:
+            monto = float(txt_monto_cuenta.value)
+            estado["cuenta"].retirar(monto)
+            mostrar_notificacion(f"✅ Retiro exitoso de ${monto:.2f}.", ft.Colors.BLUE_GREY_700)
+            actualizar_saldo_cuenta()
+        except (SaldoInsuficienteError, ValueError) as ex: mostrar_notificacion(f"❌ Error Retiro: {ex}", ft.Colors.RED_700)
+
+    def aplicar_interes(e):
+        if isinstance(estado["cuenta"], CuentaAhorro):
+            saldo_anterior = estado["cuenta"].get_saldo()
+            estado["cuenta"].aplicar_interes()
+            interes_aplicado = estado["cuenta"].get_saldo() - saldo_anterior
+            mostrar_notificacion(f"💰 Interés aplicado (${interes_aplicado:.2f}).", ft.Colors.YELLOW_700)
+            actualizar_saldo_cuenta()
+        else: mostrar_notificacion("❌ Esta cuenta no admite la aplicación de intereses.", ft.Colors.RED_700)
+
+    def realizar_compra(e):
+        try:
+            monto = float(txt_monto_tarjeta.value)
+            estado["tarjeta"].realizar_compra(monto)
+            mostrar_notificacion(f"🛍️ Compra de ${monto:.2f} realizada.", ft.Colors.ORANGE_700)
+            actualizar_saldo_tarjeta()
+        except LimiteExcedidoError as ex: mostrar_notificacion(f"❌ Error Compra: {ex}", ft.Colors.RED_700)
+
+    def pagar_tarjeta(e):
+        try:
+            monto = float(txt_monto_tarjeta.value)
+            estado["tarjeta"].pagar_tarjeta(monto)
+            mostrar_notificacion(f"💵 Pago de ${monto:.2f} realizado.", ft.Colors.GREEN_700)
+            actualizar_saldo_tarjeta()
+        except ValueError as ex: mostrar_notificacion(f"❌ Error Pago: {ex}", ft.Colors.RED_700)
+
+    # Asignar eventos
+    dropdown_tipo_cuenta.on_change = lambda e: txt_interes.set_value(txt_interes.value) if e.control.value == "Ahorro" and txt_interes.visible == True else setattr(txt_interes, 'visible', e.control.value == "Ahorro")
+    btn_depositar.on_click = depositar
+    btn_retirar.on_click = retirar
+    btn_aplicar_interes.on_click = aplicar_interes
+    btn_comprar.on_click = realizar_compra
+    btn_pagar.on_click = pagar_tarjeta
+    
+    def update_operaciones_row_visibility(e=None):
+        operaciones_row = page.controls[-1].content
+        if estado["cuenta"]: operaciones_row.controls[0].visible = True
+        if estado["tarjeta"]: operaciones_row.controls[2].visible = True
+        page.update()
+
+    btn_crear_cuenta.on_click = lambda e: (crear_cuenta(e), update_operaciones_row_visibility(e))
+    btn_crear_tarjeta.on_click = lambda e: (crear_tarjeta(e), update_operaciones_row_visibility(e))
+    btn_registrar_cliente.on_click = registrar_cliente
+    
+    # ----------------- Estructura de la Interfaz -----------------
+
+    cliente_container = ft.Container(
+        content=ft.Column([ft.Text("1. Datos del Cliente", size=20, weight=ft.FontWeight.BOLD), txt_nombre, txt_apellido, txt_dni, btn_registrar_cliente], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10),
+        padding=20, border_radius=10, border=ft.border.all(1, ft.Colors.BLUE_200), width=350,
     )
     
-    # --- Inicializar la interfaz de usuario y la carga de datos ---
-
-    actualizar_saldo()
-    actualizar_tarjeta()
-
-    # --- Estructura de pestañas ---
-
     page.add(
-        ft.Tabs(
-            selected_index=0,
-            animation_duration=300,
-            expand=True,
-            tabs=[
-                ft.Tab(
-                    text="Cliente",
-                    icon=ft.Icons.ACCOUNT_CIRCLE,
-                    content=ft.Container(cliente_info, alignment=ft.alignment.top_center, padding=20)
-                ),
-                ft.Tab(
-                    text="Cuenta",
-                    icon=ft.Icons.ACCOUNT_BALANCE,
-                    content=ft.Container(cuenta_controles, alignment=ft.alignment.top_center)
-                ),
-                ft.Tab(
-                    text="Cta. Ahorro",
-                    icon=ft.Icons.SAVINGS,
-                    content=ft.Container(controles_ca, alignment=ft.alignment.top_center)
-                ),
-                ft.Tab(
-                    text="Tarjeta",
-                    icon=ft.Icons.CREDIT_CARD,
-                    content=ft.Container(card_controls, alignment=ft.alignment.top_center)
-                ),
-            ],
-        )
+        ft.Row(
+            [cliente_container, ft.VerticalDivider(), ft.Column([cuenta_form_container, tarjeta_form_container], spacing=30, alignment=ft.MainAxisAlignment.START)],
+            vertical_alignment=ft.CrossAxisAlignment.START, spacing=30
+        ),
+        ft.Container(
+            content=ft.Row( 
+                [
+                    # Bloque de Operaciones Cuenta
+                    ft.Container(
+                        content=ft.Column([ft.Text("Operaciones Cuenta", size=18, weight=ft.FontWeight.BOLD), operaciones_cuenta_container, historial_container], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+                        padding=20, border_radius=10, border=ft.border.all(1, ft.Colors.INDIGO_200), width=370, visible=False,
+                    ),
+                    ft.VerticalDivider(visible=False),
+                    # Bloque de Operaciones Tarjeta
+                    ft.Container(
+                        content=ft.Column([ft.Text("Operaciones Tarjeta", size=18, weight=ft.FontWeight.BOLD), operaciones_tarjeta_container], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+                        padding=20, border_radius=10, border=ft.border.all(1, ft.Colors.ORANGE_200), width=370, visible=False,
+                    ),
+                ],
+                spacing=30 # Mantenemos el spacing aquí
+            ),
+            margin=ft.margin.only(top=30) # Aplicamos el margin al contenedor externo
+        )   
     )
-    
+
 if __name__ == "__main__":
     ft.app(target=main)
-    

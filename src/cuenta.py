@@ -50,3 +50,6 @@ class Cuenta:
 
     def mostrar_transacciones(self):
         return [str(t) for t in self.__transacciones]
+
+    def get_transacciones(self): 
+        return self.__transacciones
