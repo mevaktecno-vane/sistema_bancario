@@ -18,6 +18,21 @@ def main(page: ft.Page):
     lista_clientes_column = ft.Column(scroll=ft.ScrollMode.ALWAYS, spacing=5, height=200)
     btn_nuevo_cliente = ft.ElevatedButton(text="➕ Registrar Nuevo Cliente", icon=ft.Icons.PERSON_ADD)
 
+    # Botón para exportar datos a PDF
+    btn_exportar_pdf = ft.ElevatedButton(
+        text="Exportar datos en PDF",
+        icon=ft.Icons.PICTURE_AS_PDF,
+        # La función se definirá a continuación
+        #on_click=exportar_datos_a_pdf, 
+        bgcolor=ft.Colors.RED_700,
+        color=ft.Colors.WHITE
+    )
+    exportar_container = ft.Container(
+        content=btn_exportar_pdf,
+        alignment=ft.alignment.center,
+        padding=ft.padding.only(top=30)
+    )
+
     # --- Funciones Auxiliares ---
     def mostrar_notificacion(texto, color=ft.Colors.GREEN_700):
         page.snack_bar = ft.SnackBar(ft.Text(texto), bgcolor=color, duration=3000)
@@ -68,6 +83,17 @@ def main(page: ft.Page):
             lbl_limite_tarjeta.value = f"Límite Total: ${estado['tarjeta'].get_limite():.2f}"
             lbl_saldo_tarjeta.value = f"Deuda Actual: ${estado['tarjeta'].get_saldo_actual():.2f}"
         page.update()
+
+    def exportar_datos_a_pdf(e):
+        # Implementar la exportación de datos a PDF
+        if estado["cliente"] is None:
+            mostrar_notificacion("❌ Error: Primero registre y seleccione un cliente.", ft.Colors.RED_700)
+            return
+        cliente_actual = estado["cliente"]
+        cuenta_actual = estado["cuenta"]
+        tarjeta_actual = estado["tarjeta"]
+        #exportar_a_pdf(cliente_actual, cuenta_actual, tarjeta_actual)
+        mostrar_notificacion(f"💾 Iniciando exportación a PDF para {cliente_actual.get_nombre()}...", ft.Colors.RED_400, 5000)
 
     # --- UI: Cliente ---
     txt_nombre = ft.TextField(label="Nombre", width=300)
@@ -399,7 +425,8 @@ def main(page: ft.Page):
                 spacing=30 # Mantenemos el spacing aquí
             ),
             margin=ft.margin.only(top=30) # Aplicamos el margin al contenedor externo
-        )   
+        ),   
+            exportar_container
     )
 
 if __name__ == "__main__":
