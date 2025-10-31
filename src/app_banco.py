@@ -1,9 +1,11 @@
 import flet as ft
+import threading
 from src.cliente import Cliente
 from src.cuenta import Cuenta
 from src.tarjeta import Tarjeta
 from src.transaccion import Transaccion
 from src.cuenta_ahorro import CuentaAhorro
+from src.exportar_datos_a_pdf import generar_pdf_reporte
 
 class SaldoInsuficienteError(Exception): pass
 class LimiteExcedidoError(Exception): pass #
@@ -22,8 +24,7 @@ def main(page: ft.Page):
     btn_exportar_pdf = ft.ElevatedButton(
         text="Exportar datos en PDF",
         icon=ft.Icons.PICTURE_AS_PDF,
-        # La función se definirá a continuación
-        on_click=exportar_datos_a_pdf, 
+
         bgcolor=ft.Colors.RED_700,
         color=ft.Colors.WHITE
     )
@@ -92,8 +93,52 @@ def main(page: ft.Page):
         cliente_actual = estado["cliente"]
         cuenta_actual = estado["cuenta"]
         tarjeta_actual = estado["tarjeta"]
-        exportar_a_pdf(cliente_actual, cuenta_actual, tarjeta_actual)
-        mostrar_notificacion(f"💾 Iniciando exportación a PDF para {cliente_actual.get_nombre()}...", ft.Colors.RED_400, 5000)
+
+        mostrar_notificacion(f"💾 Generando PDF para {cliente_actual.get_nombre()}...", ft.Colors.AMBER_700, 5000)
+
+        # 🟢 NUEVO: INICIAR LA TAREA EN UN HILO SEPARADO
+        threading.Thread(
+            # El hilo ejecuta la función de manejo de resultados, pasándole la función FPDF
+            target=lambda: _manejar_resultado_pdf(
+                _generar_y_guardar_pdf(cliente_actual, cuenta_actual, tarjeta_actual)
+            )
+        ).start()
+    def mostrar_notificacion(texto, color=ft.Colors.GREEN_700, duracion_ms=3000):
+    
+        page.snack_bar = ft.SnackBar(
+            ft.Text(texto),
+            bgcolor=color,
+            duration=duracion_ms 
+        )
+        page.snack_bar.open = True
+        page.update()
+    def _manejar_resultado_pdf(resultado):
+        # Función auxiliar para manejar el resultado de la exportación a PDF
+        
+        exito, mensaje = resultado
+        if exito:
+            mostrar_notificacion(f"✅ Exportación exitosa. Archivo '{mensaje}' creado.", ft.Colors.GREEN_700, 7000)
+        else:
+            mostrar_notificacion(f"❌ Error al guardar PDF: {mensaje}", ft.Colors.RED_700, 7000)   
+
+    def _generar_y_guardar_pdf(cliente_actual, cuenta_actual, tarjeta_actual):
+        """Genera el PDF de forma síncrona y devuelve el resultado."""
+
+        
+        # --- Validación inicial ---
+        if cliente_actual is None:
+             return False, "No hay cliente seleccionado para exportar."
+        
+        from src.cuenta_ahorro import CuentaAhorro 
+        
+        # --- Generación del PDF ---
+        return generar_pdf_reporte(
+            cliente_actual, 
+            cuenta_actual, 
+            tarjeta_actual, 
+            CuentaAhorro, # Pasar la clase para el chequeo isinstance
+            ft.Colors      # Pasar ft.Colors
+        )
 
     # --- UI: Cliente ---
     txt_nombre = ft.TextField(label="Nombre", width=300)
@@ -172,10 +217,10 @@ def main(page: ft.Page):
         width=350,
         height=380 
     )
-    operaciones_cuenta_container = ft.Container(
+    operaciones_cuenta_contenido = ft.Container(
         content=ft.Column([lbl_saldo_cuenta, txt_monto_cuenta, ft.Row([btn_depositar, btn_retirar], alignment=ft.MainAxisAlignment.CENTER), btn_aplicar_interes], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10), visible=False, width=350, padding=10
     )
-    operaciones_tarjeta_container = ft.Container(
+    operaciones_tarjeta_contenido = ft.Container(
         content=ft.Column(
             [
                 lbl_limite_tarjeta, 
@@ -188,6 +233,31 @@ def main(page: ft.Page):
             spacing=10
         ),  
         visible=False, width=350, padding=10
+    )
+
+    contenedor_operaciones_cuenta_final = ft.Container(
+        content=ft.Column(
+            [
+                ft.Text("Operaciones Cuenta", size=18, weight=ft.FontWeight.BOLD),
+                # Usamos el contenido interno:
+                operaciones_cuenta_contenido,  
+                historial_container
+            ],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER
+        ),
+        padding=20, border_radius=10, border=ft.border.all(1, ft.Colors.INDIGO_200), width=370, visible=False,
+    )
+
+    contenedor_operaciones_tarjeta_final = ft.Container(
+        content=ft.Column(
+            [
+                ft.Text("Operaciones Tarjeta", size=18, weight=ft.FontWeight.BOLD),
+                # Usamos el contenido interno:
+                operaciones_tarjeta_contenido 
+            ],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER
+        ),
+        padding=20, border_radius=10, border=ft.border.all(1, ft.Colors.ORANGE_200), width=370, visible=False,
     )
 
     # ----------------- Lógica del Negocio (Manejadores) -----------------
@@ -234,8 +304,8 @@ def main(page: ft.Page):
         tarjeta_form_container.disabled = False
         
         # Oculta las operaciones hasta que se creen productos para este cliente
-        operaciones_cuenta_container.visible = False
-        operaciones_tarjeta_container.visible = False
+        operaciones_cuenta_contenido.visible = False
+        operaciones_tarjeta_contenido.visible = False
         historial_container.visible = False
         
         mostrar_notificacion(f"👤 Cliente '{cliente_seleccionado.get_nombre()}' seleccionado. Cree su Cuenta y Tarjeta.", ft.Colors.AMBER_700)
@@ -254,8 +324,8 @@ def main(page: ft.Page):
         # Deshabilita productos/operaciones
         cuenta_form_container.disabled = True
         tarjeta_form_container.disabled = True
-        operaciones_cuenta_container.visible = False
-        operaciones_tarjeta_container.visible = False
+        operaciones_cuenta_contenido.visible = False
+        operaciones_tarjeta_contenido.visible = False
         
         mostrar_notificacion("Formulario listo. Ingrese los datos del nuevo cliente.", ft.Colors.CYAN_700)
         page.update()
@@ -294,7 +364,7 @@ def main(page: ft.Page):
             estado["cuenta"] = nueva_cuenta
             mostrar_notificacion(f"🎉 ¡Éxito! {nueva_cuenta.__str__()} ", ft.Colors.GREEN_700)
             cuenta_form_container.disabled = True
-            operaciones_cuenta_container.visible = True
+            operaciones_cuenta_contenido.visible = True
             historial_container.visible = True
             btn_depositar.disabled = btn_retirar.disabled = False
             actualizar_saldo_cuenta()
@@ -312,7 +382,7 @@ def main(page: ft.Page):
             
             mostrar_notificacion(f"💳 Tarjeta emitida: Nro {nueva_tarjeta.get_numero()}", ft.Colors.INDIGO_700)
             tarjeta_form_container.disabled = True
-            operaciones_tarjeta_container.visible = True
+            operaciones_tarjeta_contenido.visible = True
             btn_comprar.disabled = btn_pagar.disabled = False
             actualizar_saldo_tarjeta()
 
@@ -371,11 +441,13 @@ def main(page: ft.Page):
     btn_aplicar_interes.on_click = aplicar_interes
     btn_comprar.on_click = realizar_compra
     btn_pagar.on_click = pagar_tarjeta
-    
+    btn_exportar_pdf.on_click = exportar_datos_a_pdf
     def update_operaciones_row_visibility(e=None):
         operaciones_row = page.controls[-1].content
-        if estado["cuenta"]: operaciones_row.controls[0].visible = True
-        if estado["tarjeta"]: operaciones_row.controls[2].visible = True
+        if estado["cuenta"]: 
+            contenedor_operaciones_cuenta_final.visible = True
+        if estado["tarjeta"]: 
+            contenedor_operaciones_tarjeta_final.visible = True
         page.update()
 
     btn_crear_cuenta.on_click = lambda e: (crear_cuenta(e), update_operaciones_row_visibility(e))
@@ -393,7 +465,7 @@ def main(page: ft.Page):
         ft.Row(
             [
                 
-            # COLUMNA 1: Datos del Cliente (Formulario de Registro)
+                # COLUMNA 1: Datos del Cliente (Formulario de Registro)
                 ft.Column([cliente_container], spacing=30, alignment=ft.MainAxisAlignment.START), 
                 ft.VerticalDivider(),
                 
@@ -410,21 +482,13 @@ def main(page: ft.Page):
         ft.Container(
             content=ft.Row( 
                 [
-                    # Bloque de Operaciones Cuenta
-                    ft.Container(
-                        content=ft.Column([ft.Text("Operaciones Cuenta", size=18, weight=ft.FontWeight.BOLD), operaciones_cuenta_container, historial_container], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
-                        padding=20, border_radius=10, border=ft.border.all(1, ft.Colors.INDIGO_200), width=370, visible=False,
-                    ),
+                    contenedor_operaciones_cuenta_final, 
                     ft.VerticalDivider(visible=False),
-                    # Bloque de Operaciones Tarjeta
-                    ft.Container(
-                        content=ft.Column([ft.Text("Operaciones Tarjeta", size=18, weight=ft.FontWeight.BOLD), operaciones_tarjeta_container], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
-                        padding=20, border_radius=10, border=ft.border.all(1, ft.Colors.ORANGE_200), width=370, visible=False,
-                    ),
+                    contenedor_operaciones_tarjeta_final, 
                 ],
-                spacing=30 # Mantenemos el spacing aquí
+                spacing=30
             ),
-            margin=ft.margin.only(top=30) # Aplicamos el margin al contenedor externo
+            margin=ft.margin.only(top=30)
         ),   
             exportar_container
     )
