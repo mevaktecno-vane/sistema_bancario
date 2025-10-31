@@ -12,6 +12,9 @@ def main(page: ft.Page):
     page.scroll = ft.ScrollMode.ADAPTIVE
     
     estado = {"cliente": None, "cuenta": None, "tarjeta": None} 
+    clientes_registrados = []
+    lista_clientes_column = ft.Column(scroll=ft.ScrollMode.ALWAYS, spacing=5, height=200)
+    btn_nuevo_cliente = ft.ElevatedButton(text="➕ Registrar Nuevo Cliente", icon=ft.Icons.PERSON_ADD)
 
     # --- Funciones Auxiliares ---
     def mostrar_notificacion(texto, color=ft.Colors.GREEN_700):
@@ -98,6 +101,23 @@ def main(page: ft.Page):
         [ft.Text("3. Emitir Tarjeta", size=20, weight=ft.FontWeight.BOLD), txt_nro_tarjeta, txt_limite_tarjeta, btn_crear_tarjeta],
         horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10, disabled=True,
     )
+    gestion_clientes_container = ft.Container(
+        content=ft.Column(
+            [
+                ft.Text("4. Clientes Registrados", size=20, weight=ft.FontWeight.BOLD),
+                btn_nuevo_cliente,
+                ft.Divider(),
+                lista_clientes_column, # Aquí va el listado dinámico
+            ],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=10
+        ),
+        padding=20,
+        border_radius=10,
+        border=ft.border.all(1, ft.Colors.PURPLE_200),
+        width=350,
+        height=380 
+    )
     operaciones_cuenta_container = ft.Container(
         content=ft.Column([lbl_saldo_cuenta, txt_monto_cuenta, ft.Row([btn_depositar, btn_retirar], alignment=ft.MainAxisAlignment.CENTER), btn_aplicar_interes], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10), visible=False, width=350, padding=10
     )
@@ -106,16 +126,89 @@ def main(page: ft.Page):
     )
 
     # ----------------- Lógica del Negocio (Manejadores) -----------------
+    def actualizar_tarjeta_clientes():
+        lista_clientes_column.controls.clear()
+        
+        if not clientes_registrados:
+            lista_clientes_column.controls.append(ft.Text("No hay clientes registrados.", italic=True))
+        else:
+            for cliente in clientes_registrados:
+                cliente_row = ft.Row(
+                    [
+                        ft.Text(f"{cliente.get_nombre()} {cliente.get_apellido()} (DNI: {cliente._Cliente__dni})", size=14),
+                        # Botón para seleccionar el cliente
+                        ft.ElevatedButton(
+                            "Seleccionar",
+                            icon=ft.Icons.CHECK_CIRCLE_OUTLINE,
+                            # Usamos lambda con c=cliente para capturar la instancia correcta
+                            on_click=lambda e, c=cliente: seleccionar_cliente(c), 
+                        
+                        ),
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+                )
+                lista_clientes_column.controls.append(cliente_row)
+        page.update()
+
+    def seleccionar_cliente(cliente_seleccionado):
     
+        # Restablece la cuenta y tarjeta antiguas
+        estado["cuenta"] = None
+        estado["tarjeta"] = None
+        estado["cliente"] = cliente_seleccionado # 1. Establece el nuevo cliente activo
+        
+        # Restablece visualmente el formulario de registro (para mostrar los datos del seleccionado)
+        txt_nombre.value = cliente_seleccionado.get_nombre()
+        txt_apellido.value = cliente_seleccionado.get_apellido()
+        # Acceso directo al atributo "privado" para obtener el DNI (convención POO)
+        txt_dni.value = cliente_seleccionado._Cliente__dni 
+    
+        # Habilita las secciones de productos (Cuenta/Tarjeta) y deshabilita el registro
+        btn_registrar_cliente.disabled = True
+        cuenta_form_container.disabled = False
+        tarjeta_form_container.disabled = False
+        
+        # Oculta las operaciones hasta que se creen productos para este cliente
+        operaciones_cuenta_container.visible = False
+        operaciones_tarjeta_container.visible = False
+        historial_container.visible = False
+        
+        mostrar_notificacion(f"👤 Cliente '{cliente_seleccionado.get_nombre()}' seleccionado. Cree su Cuenta y Tarjeta.", ft.Colors.AMBER_700)
+        page.update()
+
+    # 🆕 NUEVA FUNCIÓN: Resetea el formulario para crear un nuevo cliente
+    def reset_formulario_cliente(e):
+        # Limpia el estado y los campos
+        estado["cliente"] = None
+        estado["cuenta"] = None
+        estado["tarjeta"] = None
+        
+        txt_nombre.value = ""; txt_apellido.value = ""; txt_dni.value = ""
+        btn_registrar_cliente.disabled = False # Habilita el registro
+        
+        # Deshabilita productos/operaciones
+        cuenta_form_container.disabled = True
+        tarjeta_form_container.disabled = True
+        operaciones_cuenta_container.visible = False
+        operaciones_tarjeta_container.visible = False
+        
+        mostrar_notificacion("Formulario listo. Ingrese los datos del nuevo cliente.", ft.Colors.CYAN_700)
+        page.update()
+        
+    btn_nuevo_cliente.on_click = reset_formulario_cliente # Asignación de la nueva función
     def registrar_cliente(e):
         nombre, apellido, dni = txt_nombre.value, txt_apellido.value, txt_dni.value
         try:
             nuevo_cliente = Cliente(nombre, apellido, dni)
+            clientes_registrados.append(nuevo_cliente)
             estado["cliente"] = nuevo_cliente
             mostrar_notificacion(f"✅ Cliente registrado: {nuevo_cliente.__str__()}", ft.Colors.BLUE_700)
             btn_registrar_cliente.disabled = True
             cuenta_form_container.disabled = False
             tarjeta_form_container.disabled = False
+            
+            #  ACTUALIZAR LA TARJETA DE CLIENTES
+            actualizar_tarjeta_clientes()
             page.update()
         except ValueError as ex:
             mostrar_notificacion(f"❌ Error Cliente: {ex}", ft.Colors.RED_700)
@@ -227,7 +320,20 @@ def main(page: ft.Page):
     
     page.add(
         ft.Row(
-            [cliente_container, ft.VerticalDivider(), ft.Column([cuenta_form_container, tarjeta_form_container], spacing=30, alignment=ft.MainAxisAlignment.START)],
+            [
+                
+            # COLUMNA 1: Datos del Cliente (Formulario de Registro)
+                ft.Column([cliente_container], spacing=30, alignment=ft.MainAxisAlignment.START), 
+                ft.VerticalDivider(),
+                
+                # COLUMNA 2: Creación de Productos (Cuenta y Tarjeta)
+                ft.Column([cuenta_form_container, tarjeta_form_container], spacing=30, alignment=ft.MainAxisAlignment.START),
+                ft.VerticalDivider(),
+
+                # COLUMNA 3: Gestión de Clientes (La nueva tarjeta de selección)
+                gestion_clientes_container
+
+            ],
             vertical_alignment=ft.CrossAxisAlignment.START, spacing=30
         ),
         ft.Container(
