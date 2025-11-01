@@ -8,7 +8,9 @@ from src.cuenta_ahorro import CuentaAhorro
 from src.exportar_datos_a_pdf import generar_pdf_reporte
 
 class SaldoInsuficienteError(Exception): pass
-class LimiteExcedidoError(Exception): pass #
+class LimiteExcedidoError(Exception): pass 
+
+# --- Función Principal (main)---
 def main(page: ft.Page):
     page.title = "Registro Financiero POO"
     page.vertical_alignment = ft.MainAxisAlignment.START
@@ -57,14 +59,14 @@ def main(page: ft.Page):
         historial_tarjeta_column.controls.clear()
         
         if estado["tarjeta"]:
-            # La clase Tarjeta usa get_movimientos() para obtener la lista de tuplas
+            # Obtener movimientos de la tarjeta
             movimientos = estado["tarjeta"].get_movimientos()
             if not movimientos:
                 historial_tarjeta_column.controls.append(ft.Text("No hay movimientos registrados.", italic=True))
             else:
                 # Mostrar movimientos en orden inverso (más reciente primero)
                 for fecha, monto, tipo in reversed(movimientos):
-                    # Asignar color basado en el tipo de movimiento (Compra=Deuda, Pago=Reducción)
+                    
                     color = ft.Colors.RED_700 if tipo == "Compra" else ft.Colors.GREEN_700
                     
                     movimiento_str = f"{fecha.strftime('%Y-%m-%d %H:%M:%S')} | {tipo.upper():<10} | ${monto:.2f}"
@@ -86,7 +88,7 @@ def main(page: ft.Page):
         page.update()
 
     def exportar_datos_a_pdf(e):
-        # Implementar la exportación de datos a PDF
+        
         if estado["cliente"] is None:
             mostrar_notificacion("❌ Error: Primero registre y seleccione un cliente.", ft.Colors.RED_700)
             return
@@ -96,7 +98,7 @@ def main(page: ft.Page):
 
         mostrar_notificacion(f"💾 Generando PDF para {cliente_actual.get_nombre()}...", ft.Colors.AMBER_700, 5000)
 
-        # 🟢 NUEVO: INICIAR LA TAREA EN UN HILO SEPARADO
+        # Inicia un hilo para la exportación a PDF
         threading.Thread(
             # El hilo ejecuta la función de manejo de resultados, pasándole la función FPDF
             target=lambda: _manejar_resultado_pdf(
@@ -113,7 +115,7 @@ def main(page: ft.Page):
         page.snack_bar.open = True
         page.update()
     def _manejar_resultado_pdf(resultado):
-        # Función auxiliar para manejar el resultado de la exportación a PDF
+
         
         exito, mensaje = resultado
         if exito:
@@ -122,9 +124,7 @@ def main(page: ft.Page):
             mostrar_notificacion(f"❌ Error al guardar PDF: {mensaje}", ft.Colors.RED_700, 7000)   
 
     def _generar_y_guardar_pdf(cliente_actual, cuenta_actual, tarjeta_actual):
-        """Genera el PDF de forma síncrona y devuelve el resultado."""
-
-        
+       
         # --- Validación inicial ---
         if cliente_actual is None:
              return False, "No hay cliente seleccionado para exportar."
@@ -136,77 +136,182 @@ def main(page: ft.Page):
             cliente_actual, 
             cuenta_actual, 
             tarjeta_actual, 
-            CuentaAhorro, # Pasar la clase para el chequeo isinstance
-            ft.Colors      # Pasar ft.Colors
+            CuentaAhorro, 
+            ft.Colors      
         )
 
-    # --- UI: Cliente ---
-    txt_nombre = ft.TextField(label="Nombre", width=300)
-    txt_apellido = ft.TextField(label="Apellido", width=300)
-    # ✅ CORRECCIÓN FINAL: Solo dígitos (r"[0-9]")
+    # --- Interfaz Cliente ---
+    txt_nombre = ft.TextField(
+        label="Nombre", 
+        width=300
+        )
+    
+    txt_apellido = ft.TextField(
+        label="Apellido", 
+        width=300
+        )
+
     txt_dni = ft.TextField(label="DNI", width=300, input_filter=ft.InputFilter(r"[0-9]"))
     btn_registrar_cliente = ft.ElevatedButton(text="Registrar Cliente", icon=ft.Icons.PERSON_ADD)
     
-    # --- UI: Cuenta ---
+    # --- Interfaz Cuenta ---
     txt_nro_cuenta = ft.TextField(label="Número de Cuenta", width=300)
-    # ✅ CORRECCIÓN FINAL: Dígitos y punto decimal (r"[0-9\.]")
+
     txt_saldo_inicial = ft.TextField(label="Saldo Inicial", width=300, value="0.0", input_filter=ft.InputFilter(r"[0-9\.]"))
-    # ✅ CORRECCIÓN FINAL: Dígitos y punto decimal (r"[0-9\.]")
-    txt_interes = ft.TextField(label="Tasa de Interés (%)", width=300, value="1.0", visible=False, input_filter=ft.InputFilter(r"[0-9\.]"))
-    dropdown_tipo_cuenta = ft.Dropdown(width=300, label="Tipo de Cuenta", options=[ft.dropdown.Option("Base"), ft.dropdown.Option("Ahorro")], value="Base")
-    btn_crear_cuenta = ft.ElevatedButton(text="Crear Cuenta", icon=ft.Icons.ACCOUNT_BALANCE)
+
+    txt_interes = ft.TextField(
+        label="Tasa de Interés (%)", 
+        width=300, value="1.0", 
+        visible=False, 
+        input_filter=ft.InputFilter(r"[0-9\.]")
+        )
+    
+    dropdown_tipo_cuenta = ft.Dropdown(
+        width=300, label="Tipo de Cuenta", 
+        options=[ft.dropdown.Option("Cuenta Corriente"), 
+                 ft.dropdown.Option("Ahorro")], 
+        value="Cuenta Corriente"
+        )
+    
+    btn_crear_cuenta = ft.ElevatedButton(
+        text="Crear Cuenta", 
+        icon=ft.Icons.ACCOUNT_BALANCE
+        )
     
     # Operaciones Cuenta
-    lbl_saldo_cuenta = ft.Text("Saldo Actual: $0.00", size=16, weight=ft.FontWeight.BOLD)
-    # ✅ CORRECCIÓN FINAL: Dígitos y punto decimal (r"[0-9\.]")
-    txt_monto_cuenta = ft.TextField(label="Monto (Depósito/Retiro)", width=300, input_filter=ft.InputFilter(r"[0-9\.]"))
-    btn_depositar = ft.ElevatedButton(text="Depositar", icon=ft.Icons.ARROW_UPWARD, disabled=True)
-    btn_retirar = ft.ElevatedButton(text="Retirar", icon=ft.Icons.ARROW_DOWNWARD, disabled=True)
-    btn_aplicar_interes = ft.ElevatedButton(text="Aplicar Interés", icon=ft.Icons.REPLAY_10, disabled=True, visible=False)
+    lbl_saldo_cuenta = ft.Text("Saldo Actual: $0.00", 
+        size=16, 
+        weight=ft.FontWeight.BOLD
+        )
 
-    # --- UI: Tarjeta ---
-    # ✅ CORRECCIÓN FINAL: Solo dígitos (r"[0-9]")
-    txt_nro_tarjeta = ft.TextField(label="Número de Tarjeta", width=300, input_filter=ft.InputFilter(r"[0-9]"))
-    # ✅ CORRECCIÓN FINAL: Dígitos y punto decimal (r"[0-9\.]")
-    txt_limite_tarjeta = ft.TextField(label="Límite de Crédito", width=300, value="10000.0", input_filter=ft.InputFilter(r"[0-9\.]"))
+    txt_monto_cuenta = ft.TextField(
+        label="Monto (Depósito/Retiro)", 
+        width=300, 
+        input_filter=ft.InputFilter(r"[0-9\.]")
+        )
+    
+    btn_depositar = ft.ElevatedButton(
+        text="Depositar", 
+        icon=ft.Icons.ARROW_UPWARD, 
+        disabled=True
+        )
+    
+    btn_retirar = ft.ElevatedButton(
+        text="Retirar", 
+        icon=ft.Icons.ARROW_DOWNWARD, 
+        disabled=True
+        )
+    
+    btn_aplicar_interes = ft.ElevatedButton(
+        text="Aplicar Interés", 
+        icon=ft.Icons.REPLAY_10, 
+        disabled=True, 
+        visible=False
+        )
+
+    # --- Interfaz Tarjeta ---
+
+    txt_nro_tarjeta = ft.TextField(
+        label="Número de Tarjeta", 
+        width=300, 
+        input_filter=ft.InputFilter(r"[0-9]")
+        )
+  
+    txt_limite_tarjeta = ft.TextField(
+        label="Límite de Crédito", 
+        width=300, value="10000.0", 
+        input_filter=ft.InputFilter(r"[0-9\.]")
+        )
+    
     btn_crear_tarjeta = ft.ElevatedButton(text="Emitir Tarjeta", icon=ft.Icons.CREDIT_CARD)
 
     # Operaciones Tarjeta
+
     lbl_limite_tarjeta = ft.Text("Límite Total: $0.00", size=16, weight=ft.FontWeight.BOLD)
-    lbl_saldo_tarjeta = ft.Text("Deuda Actual: $0.00", size=16, weight=ft.FontWeight.BOLD)
-    # ✅ CORRECCIÓN FINAL: Dígitos y punto decimal (r"[0-9\.]")
-    txt_monto_tarjeta = ft.TextField(label="Monto (Compra/Pago)", width=300, input_filter=ft.InputFilter(r"[0-9\.]"))
-    btn_comprar = ft.ElevatedButton(text="Realizar Compra", icon=ft.Icons.SHOPPING_CART, disabled=True)
-    btn_pagar = ft.ElevatedButton(text="Pagar Tarjeta", icon=ft.Icons.PAYMENT, disabled=True)
     
-    # --- Historial de Transacciones (¡Mantenido!) ---
-    historial_column = ft.Column([ft.Text("No hay transacciones registradas.", italic=True)], scroll=ft.ScrollMode.ADAPTIVE, height=150)
+    lbl_saldo_tarjeta = ft.Text("Deuda Actual: $0.00", size=16, weight=ft.FontWeight.BOLD)
+    
+    txt_monto_tarjeta = ft.TextField(
+        label="Monto (Compra/Pago)", 
+        width=300, 
+        input_filter=ft.InputFilter(r"[0-9\.]")
+        )
+    
+    btn_comprar = ft.ElevatedButton(
+        text="Realizar Compra", 
+        icon=ft.Icons.SHOPPING_CART, 
+        disabled=True
+        )
+    
+    btn_pagar = ft.ElevatedButton(
+        text="Pagar Tarjeta", 
+        icon=ft.Icons.PAYMENT, 
+        disabled=True
+        )
+    
+    # --- Historial de Transacciones ---
+    historial_column = ft.Column(
+        [ft.Text("No hay transacciones registradas.", italic=True)], 
+                 scroll=ft.ScrollMode.ADAPTIVE, 
+                 height=150
+                 )
+    
     historial_container = ft.Container(
-        content=ft.Column([ft.Text("Historial de Transacciones", size=18, weight=ft.FontWeight.BOLD), historial_column], horizontal_alignment=ft.CrossAxisAlignment.START, spacing=10),
+        content=ft.Column(
+            [ft.Text("Historial de Transacciones", size=18, weight=ft.FontWeight.BOLD), 
+                     historial_column], 
+                     horizontal_alignment=ft.CrossAxisAlignment.START, 
+                     spacing=10
+                     ),
         padding=10, border_radius=10, border=ft.border.all(1, ft.Colors.GREY_300), width=350, visible=False
     )
-    # --- Historial de Movimientos de Tarjeta (NUEVO) ---
-    historial_tarjeta_column = ft.Column([ft.Text("No hay movimientos registrados.", italic=True)], scroll=ft.ScrollMode.ADAPTIVE, height=150)
+
+    # --- Historial de Movimientos de Tarjeta ---
+    historial_tarjeta_column = ft.Column(
+        [ft.Text("No hay movimientos registrados.", italic=True)], 
+                 scroll=ft.ScrollMode.ADAPTIVE, 
+                 height=150
+                 )
+    
     historial_tarjeta_container = ft.Container(
-        content=ft.Column([ft.Text("Historial de Tarjeta", size=18, weight=ft.FontWeight.BOLD), historial_tarjeta_column], horizontal_alignment=ft.CrossAxisAlignment.START, spacing=10),
+        content=ft.Column(
+            [ft.Text("Historial de Tarjeta", size=18, weight=ft.FontWeight.BOLD), 
+                     historial_tarjeta_column], 
+                     horizontal_alignment=ft.CrossAxisAlignment.START, 
+                     spacing=10
+                     ),
         padding=10, border_radius=10, border=ft.border.all(1, ft.Colors.GREY_300), width=350, visible=False
     )
+
     # Contenedores de Formulario y Operaciones
+
     cuenta_form_container = ft.Column(
-        [ft.Text("2. Crear Cuenta", size=20, weight=ft.FontWeight.BOLD), dropdown_tipo_cuenta, txt_nro_cuenta, txt_saldo_inicial, txt_interes, btn_crear_cuenta],
+        [ft.Text("2. Crear Cuenta", size=20, weight=ft.FontWeight.BOLD), 
+                 dropdown_tipo_cuenta, 
+                 txt_nro_cuenta, 
+                 txt_saldo_inicial, 
+                 txt_interes, 
+                 btn_crear_cuenta
+                 ],
         horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10, disabled=True,
     )
+
     tarjeta_form_container = ft.Column(
-        [ft.Text("3. Emitir Tarjeta", size=20, weight=ft.FontWeight.BOLD), txt_nro_tarjeta, txt_limite_tarjeta, btn_crear_tarjeta],
+        [ft.Text("3. Emitir Tarjeta", size=20, weight=ft.FontWeight.BOLD), 
+                 txt_nro_tarjeta, 
+                 txt_limite_tarjeta, 
+                 btn_crear_tarjeta
+                 ],
         horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10, disabled=True,
     )
+
     gestion_clientes_container = ft.Container(
         content=ft.Column(
             [
                 ft.Text("4. Clientes Registrados", size=20, weight=ft.FontWeight.BOLD),
                 btn_nuevo_cliente,
                 ft.Divider(),
-                lista_clientes_column, # Aquí va el listado dinámico
+                lista_clientes_column, 
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=10
@@ -218,7 +323,16 @@ def main(page: ft.Page):
         height=380 
     )
     operaciones_cuenta_contenido = ft.Container(
-        content=ft.Column([lbl_saldo_cuenta, txt_monto_cuenta, ft.Row([btn_depositar, btn_retirar], alignment=ft.MainAxisAlignment.CENTER), btn_aplicar_interes], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10), visible=False, width=350, padding=10
+        content=ft.Column(
+            [lbl_saldo_cuenta, 
+             txt_monto_cuenta, 
+             ft.Row([btn_depositar, btn_retirar], 
+                    alignment=ft.MainAxisAlignment.CENTER), 
+                    btn_aplicar_interes], 
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER, 
+                    spacing=10
+                    ), 
+                    visible=False, width=350, padding=10
     )
     operaciones_tarjeta_contenido = ft.Container(
         content=ft.Column(
@@ -239,7 +353,7 @@ def main(page: ft.Page):
         content=ft.Column(
             [
                 ft.Text("Operaciones Cuenta", size=18, weight=ft.FontWeight.BOLD),
-                # Usamos el contenido interno:
+                
                 operaciones_cuenta_contenido,  
                 historial_container
             ],
@@ -252,7 +366,7 @@ def main(page: ft.Page):
         content=ft.Column(
             [
                 ft.Text("Operaciones Tarjeta", size=18, weight=ft.FontWeight.BOLD),
-                # Usamos el contenido interno:
+
                 operaciones_tarjeta_contenido 
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER
@@ -260,7 +374,7 @@ def main(page: ft.Page):
         padding=20, border_radius=10, border=ft.border.all(1, ft.Colors.ORANGE_200), width=370, visible=False,
     )
 
-    # ----------------- Lógica del Negocio (Manejadores) -----------------
+    # ----------------- Lógica del Negocio de la Aplicación -----------------
     def actualizar_tarjeta_clientes():
         lista_clientes_column.controls.clear()
         
@@ -271,11 +385,11 @@ def main(page: ft.Page):
                 cliente_row = ft.Row(
                     [
                         ft.Text(f"{cliente.get_nombre()} {cliente.get_apellido()} (DNI: {cliente._Cliente__dni})", size=14),
-                        # Botón para seleccionar el cliente
+                        
                         ft.ElevatedButton(
                             "Seleccionar",
                             icon=ft.Icons.CHECK_CIRCLE_OUTLINE,
-                            # Usamos lambda con c=cliente para capturar la instancia correcta
+                            
                             on_click=lambda e, c=cliente: seleccionar_cliente(c), 
                         
                         ),
@@ -290,12 +404,12 @@ def main(page: ft.Page):
         # Restablece la cuenta y tarjeta antiguas
         estado["cuenta"] = None
         estado["tarjeta"] = None
-        estado["cliente"] = cliente_seleccionado # 1. Establece el nuevo cliente activo
+        estado["cliente"] = cliente_seleccionado # 1. Establece el cliente seleccionado
         
-        # Restablece visualmente el formulario de registro (para mostrar los datos del seleccionado)
+        # Restablece visualmente el formulario de registro 
         txt_nombre.value = cliente_seleccionado.get_nombre()
         txt_apellido.value = cliente_seleccionado.get_apellido()
-        # Acceso directo al atributo "privado" para obtener el DNI (convención POO)
+        
         txt_dni.value = cliente_seleccionado._Cliente__dni 
     
         # Habilita las secciones de productos (Cuenta/Tarjeta) y deshabilita el registro
@@ -311,9 +425,9 @@ def main(page: ft.Page):
         mostrar_notificacion(f"👤 Cliente '{cliente_seleccionado.get_nombre()}' seleccionado. Cree su Cuenta y Tarjeta.", ft.Colors.AMBER_700)
         page.update()
 
-    # 🆕 NUEVA FUNCIÓN: Resetea el formulario para crear un nuevo cliente
+    # Resetea el formulario para crear un nuevo cliente
     def reset_formulario_cliente(e):
-        # Limpia el estado y los campos
+        
         estado["cliente"] = None
         estado["cuenta"] = None
         estado["tarjeta"] = None
@@ -330,14 +444,14 @@ def main(page: ft.Page):
         mostrar_notificacion("Formulario listo. Ingrese los datos del nuevo cliente.", ft.Colors.CYAN_700)
         page.update()
         
-    btn_nuevo_cliente.on_click = reset_formulario_cliente # Asignación de la nueva función
+    btn_nuevo_cliente.on_click = reset_formulario_cliente 
     def registrar_cliente(e):
         nombre, apellido, dni = txt_nombre.value, txt_apellido.value, txt_dni.value
         try:
             nuevo_cliente = Cliente(nombre, apellido, dni)
             clientes_registrados.append(nuevo_cliente)
             estado["cliente"] = nuevo_cliente
-            mostrar_notificacion(f"✅ Cliente registrado: {nuevo_cliente.__str__()}", ft.Colors.BLUE_700)
+            mostrar_notificacion(f"Cliente registrado: {nuevo_cliente.__str__()}", ft.Colors.BLUE_700)
             btn_registrar_cliente.disabled = True
             cuenta_form_container.disabled = False
             tarjeta_form_container.disabled = False
@@ -346,11 +460,11 @@ def main(page: ft.Page):
             actualizar_tarjeta_clientes()
             page.update()
         except ValueError as ex:
-            mostrar_notificacion(f"❌ Error Cliente: {ex}", ft.Colors.RED_700)
+            mostrar_notificacion(f"Error Cliente: {ex}", ft.Colors.RED_700)
             
     def crear_cuenta(e):
         nro_cuenta, tipo_cuenta = txt_nro_cuenta.value, dropdown_tipo_cuenta.value
-        if estado["cliente"] is None: mostrar_notificacion("❌ Error: Primero debe registrar un cliente.", ft.Colors.RED_700); return
+        if estado["cliente"] is None: mostrar_notificacion("Error: Primero debe registrar un cliente.", ft.Colors.RED_700); return
         try:
             saldo_inicial = float(txt_saldo_inicial.value)
             if tipo_cuenta == "Ahorro":
@@ -369,70 +483,70 @@ def main(page: ft.Page):
             btn_depositar.disabled = btn_retirar.disabled = False
             actualizar_saldo_cuenta()
 
-        except ValueError as ex: mostrar_notificacion(f"❌ Error Cuenta: {ex}", ft.Colors.RED_700)
+        except ValueError as ex: mostrar_notificacion(f" Error Cuenta: {ex}", ft.Colors.RED_700)
 
     def crear_tarjeta(e):
         nro_tarjeta = txt_nro_tarjeta.value
-        if estado["cliente"] is None: mostrar_notificacion("❌ Error: Primero debe registrar un cliente.", ft.Colors.RED_700); return
+        if estado["cliente"] is None: mostrar_notificacion(" Error: Primero debe registrar un cliente.", ft.Colors.RED_700); return
         try:
             limite = float(txt_limite_tarjeta.value)
             nueva_tarjeta = Tarjeta(numero=nro_tarjeta, cliente=estado["cliente"], limite=limite)
             estado["tarjeta"] = nueva_tarjeta
             historial_tarjeta_container.visible = True
             
-            mostrar_notificacion(f"💳 Tarjeta emitida: Nro {nueva_tarjeta.get_numero()}", ft.Colors.INDIGO_700)
+            mostrar_notificacion(f" Tarjeta emitida: Nro {nueva_tarjeta.get_numero()}", ft.Colors.INDIGO_700)
             tarjeta_form_container.disabled = True
             operaciones_tarjeta_contenido.visible = True
             btn_comprar.disabled = btn_pagar.disabled = False
             actualizar_saldo_tarjeta()
 
-        except ValueError as ex: mostrar_notificacion(f"❌ Error Tarjeta: {ex}", ft.Colors.RED_700)
+        except ValueError as ex: mostrar_notificacion(f" Error Tarjeta: {ex}", ft.Colors.RED_700)
             
     def depositar(e):
         try:
             monto = float(txt_monto_cuenta.value)
             estado["cuenta"].depositar(monto)
-            mostrar_notificacion(f"✅ Depósito exitoso de ${monto:.2f}.", ft.Colors.BLUE_GREY_700)
+            mostrar_notificacion(f" Depósito exitoso de ${monto:.2f}.", ft.Colors.BLUE_GREY_700)
             actualizar_saldo_cuenta()
-        except Exception as ex: mostrar_notificacion(f"❌ Error: {ex}", ft.Colors.RED_700)
+        except Exception as ex: mostrar_notificacion(f" Error: {ex}", ft.Colors.RED_700)
 
     def retirar(e):
         try:
             monto = float(txt_monto_cuenta.value)
             estado["cuenta"].retirar(monto)
-            mostrar_notificacion(f"✅ Retiro exitoso de ${monto:.2f}.", ft.Colors.BLUE_GREY_700)
+            mostrar_notificacion(f"Retiro exitoso de ${monto:.2f}.", ft.Colors.BLUE_GREY_700)
             actualizar_saldo_cuenta()
-        except (SaldoInsuficienteError, ValueError) as ex: mostrar_notificacion(f"❌ Error Retiro: {ex}", ft.Colors.RED_700)
+        except (SaldoInsuficienteError, ValueError) as ex: mostrar_notificacion(f" Error Retiro: {ex}", ft.Colors.RED_700)
 
     def aplicar_interes(e):
         if isinstance(estado["cuenta"], CuentaAhorro):
             saldo_anterior = estado["cuenta"].get_saldo()
             estado["cuenta"].aplicar_interes()
             interes_aplicado = estado["cuenta"].get_saldo() - saldo_anterior
-            mostrar_notificacion(f"💰 Interés aplicado (${interes_aplicado:.2f}).", ft.Colors.YELLOW_700)
+            mostrar_notificacion(f" Interés aplicado (${interes_aplicado:.2f}).", ft.Colors.YELLOW_700)
             actualizar_saldo_cuenta()
-        else: mostrar_notificacion("❌ Esta cuenta no admite la aplicación de intereses.", ft.Colors.RED_700)
+        else: mostrar_notificacion(" Esta cuenta no admite la aplicación de intereses.", ft.Colors.RED_700)
 
     def realizar_compra(e):
         try:
             monto = float(txt_monto_tarjeta.value)
             estado["tarjeta"].realizar_compra(monto)
-            mostrar_notificacion(f"🛍️ Compra de ${monto:.2f} realizada.", ft.Colors.ORANGE_700)
+            mostrar_notificacion(f"Compra de ${monto:.2f} realizada.", ft.Colors.ORANGE_700)
             actualizar_saldo_tarjeta()
             actualizar_historial_tarjeta()
         except LimiteExcedidoError as ex: 
-            mostrar_notificacion(f"❌ Error Compra: {ex}", ft.Colors.RED_700)
+            mostrar_notificacion(f" Error Compra: {ex}", ft.Colors.RED_700)
         except ValueError as ex: 
-            mostrar_notificacion(f"❌ Error Compra: {ex}", ft.Colors.RED_700)
+            mostrar_notificacion(f" Error Compra: {ex}", ft.Colors.RED_700)
 
     def pagar_tarjeta(e):
         try:
             monto = float(txt_monto_tarjeta.value)
             estado["tarjeta"].pagar_tarjeta(monto)
-            mostrar_notificacion(f"💵 Pago de ${monto:.2f} realizado.", ft.Colors.GREEN_700)
+            mostrar_notificacion(f" Pago de ${monto:.2f} realizado.", ft.Colors.GREEN_700)
             actualizar_saldo_tarjeta()
             actualizar_historial_tarjeta()
-        except ValueError as ex: mostrar_notificacion(f"❌ Error Pago: {ex}", ft.Colors.RED_700)
+        except ValueError as ex: mostrar_notificacion(f" Error Pago: {ex}", ft.Colors.RED_700)
 
     # Asignar eventos
     dropdown_tipo_cuenta.on_change = lambda e: txt_interes.set_value(txt_interes.value) if e.control.value == "Ahorro" and txt_interes.visible == True else setattr(txt_interes, 'visible', e.control.value == "Ahorro")

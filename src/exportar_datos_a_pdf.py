@@ -4,12 +4,9 @@ from fpdf import FPDF
 from datetime import datetime
 from typing import Tuple, Any
 
-# La función ahora recibe las clases como objetos: CuentaAhorro, ft_colors, etc.
+
 def generar_pdf_reporte(cliente_actual, cuenta_actual, tarjeta_actual, EsCuentaAhorro, ft_colors) -> Tuple[bool, str]:
-    """
-    Toma los objetos POO y genera el archivo PDF.
-    Devuelve (éxito: bool, mensaje: str).
-    """
+    
     
     if cliente_actual is None:
         return False, "No hay cliente seleccionado para exportar."
@@ -57,7 +54,7 @@ def generar_pdf_reporte(cliente_actual, cuenta_actual, tarjeta_actual, EsCuentaA
             pdf.cell(0, 6, f'{cuenta_actual._Cuenta__nro_cuenta}', 0, 1)
                 
             pdf.cell(40, 6, 'Tipo:', 0, 0)
-            # 🟢 CORRECCIÓN: Usar el parámetro EsCuentaAhorro
+            pdf.set_font('Arial', 'B', 10)
             pdf.cell(0, 6, f'{"Ahorro" if isinstance(cuenta_actual, EsCuentaAhorro) else "Base"}', 0, 1)
                 
             pdf.cell(40, 6, 'SALDO ACTUAL:', 0, 0)
@@ -109,6 +106,7 @@ def generar_pdf_reporte(cliente_actual, cuenta_actual, tarjeta_actual, EsCuentaA
             pdf.ln(2)
                 
             # 4.1. Historial de Movimientos de la Tarjeta
+
             pdf.set_font('Arial', 'U', 11)
             pdf.cell(0, 6, 'Historial de Movimientos:', 0, 1)
                 
@@ -140,9 +138,10 @@ def generar_pdf_reporte(cliente_actual, cuenta_actual, tarjeta_actual, EsCuentaA
 
         pdf.output(nombre_archivo)
         
-        # 🟢 RETORNO DE ÉXITO
+
         return True, nombre_archivo
     
     except Exception as exc:
-        # 🟢 RETORNO DE FALLO EN CASO DE CUALQUIER EXCEPCIÓN NO CAPTURADA
+        
+        
         return False, str(exc)
