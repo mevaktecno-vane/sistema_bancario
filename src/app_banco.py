@@ -213,7 +213,9 @@ def main(page: ft.Page):
 
     txt_monto_cuenta = ft.TextField(
         label="Monto (Depósito/Retiro)", 
-        width=300, 
+        width=300,
+        keyboard_type=ft.KeyboardType.NUMBER,
+        input_filter=ft.InputFilter(r"[0-9\.]"),
         on_change=toggle_retiro_button,
         )
     
