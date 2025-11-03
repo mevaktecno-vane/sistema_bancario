@@ -79,6 +79,7 @@ def main(page: ft.Page):
         if estado["cuenta"]:
             lbl_saldo_cuenta.value = f"Saldo Actual: ${estado['cuenta'].get_saldo():.2f}"
             actualizar_historial_transacciones()
+            toggle_retiro_button()
         page.update()
         
     def actualizar_saldo_tarjeta():
@@ -86,6 +87,29 @@ def main(page: ft.Page):
             lbl_limite_tarjeta.value = f"Límite Total: ${estado['tarjeta'].get_limite():.2f}"
             lbl_saldo_tarjeta.value = f"Deuda Actual: ${estado['tarjeta'].get_saldo_actual():.2f}"
         page.update()
+
+    def toggle_retiro_button(e=None):
+        """Habilita o deshabilita el botón de retiro basado en el saldo y el monto ingresado."""
+        if estado["cuenta"] is None:
+            # Si no hay cuenta, siempre debe estar deshabilitado
+            btn_retirar.disabled = True
+            return
+        # Solo si hay cuenta, intentamos obtener el monto
+        try:
+            monto_ingresado = float(txt_monto_cuenta.value)
+            saldo_actual = estado["cuenta"].get_saldo()
+
+            # La lógica clave:
+            if monto_ingresado > 0 and monto_ingresado <= saldo_actual:
+                btn_retirar.disabled = False  # Habilitar
+            else:
+                btn_retirar.disabled = True  # Deshabilitar
+                
+        except ValueError:
+            # Si el valor no es un número válido (ej. está vacío o es solo un '.'), deshabilitar
+            btn_retirar.disabled = True
+            
+        page.update() # Reflejar el cambio en la interfaz
 
     def exportar_datos_a_pdf(e):
         
@@ -187,7 +211,8 @@ def main(page: ft.Page):
     txt_monto_cuenta = ft.TextField(
         label="Monto (Depósito/Retiro)", 
         width=300, 
-        input_filter=ft.InputFilter(r"[0-9\.]")
+        input_filter=ft.InputFilter(r"[0-9\.]"),
+        on_change=toggle_retiro_button
         )
     
     btn_depositar = ft.ElevatedButton(
