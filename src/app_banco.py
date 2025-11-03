@@ -167,26 +167,29 @@ def main(page: ft.Page):
     # --- Interfaz Cliente ---
     txt_nombre = ft.TextField(
         label="Nombre", 
+        input_filter=ft.InputFilter(r"[a-zA-Z\s]"),
         width=300
         )
     
     txt_apellido = ft.TextField(
+        input_filter=ft.InputFilter(r"[a-zA-Z\s]"),
         label="Apellido", 
         width=300
         )
 
-    txt_dni = ft.TextField(label="DNI", width=300, input_filter=ft.InputFilter(r"[0-9]"))
+    txt_dni = ft.TextField(label="DNI", keyboard_type=ft.KeyboardType.NUMBER , width=300, input_filter=ft.InputFilter(r"[0-9]"))
     btn_registrar_cliente = ft.ElevatedButton(text="Registrar Cliente", icon=ft.Icons.PERSON_ADD)
     
     # --- Interfaz Cuenta ---
-    txt_nro_cuenta = ft.TextField(label="Número de Cuenta", width=300)
+    txt_nro_cuenta = ft.TextField(label="Número de Cuenta", width=300, input_filter=ft.InputFilter(r"[0-9]"))
 
-    txt_saldo_inicial = ft.TextField(label="Saldo Inicial", width=300, value="0.0", input_filter=ft.InputFilter(r"[0-9\.]"))
+    txt_saldo_inicial = ft.TextField(label="Saldo Inicial", width=300, value="0.0",input_filter=ft.InputFilter(r"[0-9]"))
 
     txt_interes = ft.TextField(
         label="Tasa de Interés (%)", 
         width=300, value="1.0", 
         visible=False, 
+        keyboard_type=ft.KeyboardType.NUMBER,
         input_filter=ft.InputFilter(r"[0-9\.]")
         )
     
@@ -211,8 +214,7 @@ def main(page: ft.Page):
     txt_monto_cuenta = ft.TextField(
         label="Monto (Depósito/Retiro)", 
         width=300, 
-        input_filter=ft.InputFilter(r"[0-9\.]"),
-        on_change=toggle_retiro_button
+        on_change=toggle_retiro_button,
         )
     
     btn_depositar = ft.ElevatedButton(
