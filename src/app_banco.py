@@ -121,7 +121,7 @@ def main(page: ft.Page):
 
         try:
             monto_ingresado = float(txt_monto_tarjeta.value)
-            # Asumimos que get_limite() devuelve el límite de crédito disponible.
+            
             limite_disponible = estado["tarjeta"].get_limite() 
 
             # La lógica clave:
@@ -202,13 +202,13 @@ def main(page: ft.Page):
         width=300
         )
 
-    txt_dni = ft.TextField(label="DNI", keyboard_type=ft.KeyboardType.NUMBER , width=300, input_filter=ft.InputFilter(r"[0-9]"))
+    txt_dni = ft.TextField(label="DNI", keyboard_type=ft.KeyboardType.NUMBER , width=300,)
     btn_registrar_cliente = ft.ElevatedButton(text="Registrar Cliente", icon=ft.Icons.PERSON_ADD)
     
     # --- Interfaz Cuenta ---
-    txt_nro_cuenta = ft.TextField(label="Número de Cuenta", width=300, input_filter=ft.InputFilter(r"[0-9]"))
+    txt_nro_cuenta = ft.TextField(label="Número de Cuenta", width=300, keyboard_type=ft.KeyboardType.NUMBER)
 
-    txt_saldo_inicial = ft.TextField(label="Saldo Inicial", width=300, value="0.0",input_filter=ft.InputFilter(r"[0-9]"))
+    txt_saldo_inicial = ft.TextField(label="Saldo Inicial", width=300, value="0.0", keyboard_type=ft.KeyboardType.NUMBER)
 
     txt_interes = ft.TextField(
         label="Tasa de Interés (%)", 
@@ -240,7 +240,7 @@ def main(page: ft.Page):
         label="Monto (Depósito/Retiro)", 
         width=300,
         keyboard_type=ft.KeyboardType.NUMBER,
-        input_filter=ft.InputFilter(r"[0-9\.]"),
+
         on_change=toggle_retiro_button,
         )
     
@@ -268,7 +268,7 @@ def main(page: ft.Page):
     txt_nro_tarjeta = ft.TextField(
         label="Número de Tarjeta", 
         width=300, 
-        input_filter=ft.InputFilter(r"[0-9]")
+        keyboard_type=ft.KeyboardType.NUMBER
         )
   
     txt_limite_tarjeta = ft.TextField(
@@ -288,7 +288,7 @@ def main(page: ft.Page):
     txt_monto_tarjeta = ft.TextField(
         label="Monto (Compra/Pago)", 
         width=300, 
-        input_filter=ft.InputFilter(r"[0-9\.]"),
+        keyboard_type=ft.KeyboardType.NUMBER,
         on_change=toggle_compra_button
         )
     
