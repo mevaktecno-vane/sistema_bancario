@@ -86,6 +86,7 @@ def main(page: ft.Page):
         if estado["tarjeta"]:
             lbl_limite_tarjeta.value = f"Límite Total: ${estado['tarjeta'].get_limite():.2f}"
             lbl_saldo_tarjeta.value = f"Deuda Actual: ${estado['tarjeta'].get_saldo_actual():.2f}"
+            toggle_compra_button() 
         page.update()
 
     def toggle_retiro_button(e=None):
@@ -110,6 +111,30 @@ def main(page: ft.Page):
             btn_retirar.disabled = True
             
         page.update() # Reflejar el cambio en la interfaz
+
+    def toggle_compra_button(e=None):
+        """Habilita o deshabilita el botón de compra basado en el límite disponible y el monto ingresado."""
+        if estado["tarjeta"] is None:
+            # Si no hay tarjeta, siempre debe estar deshabilitado
+            btn_comprar.disabled = True
+            return
+
+        try:
+            monto_ingresado = float(txt_monto_tarjeta.value)
+            # Asumimos que get_limite() devuelve el límite de crédito disponible.
+            limite_disponible = estado["tarjeta"].get_limite() 
+
+            # La lógica clave:
+            if monto_ingresado > 0 and monto_ingresado <= limite_disponible:
+                btn_comprar.disabled = False  # Habilitar
+            else:
+                btn_comprar.disabled = True  # Deshabilitar
+                
+        except ValueError:
+            # Si el valor no es un número válido (ej. está vacío), deshabilitar
+            btn_comprar.disabled = True
+            
+        page.update()
 
     def exportar_datos_a_pdf(e):
         
@@ -263,7 +288,8 @@ def main(page: ft.Page):
     txt_monto_tarjeta = ft.TextField(
         label="Monto (Compra/Pago)", 
         width=300, 
-        input_filter=ft.InputFilter(r"[0-9\.]")
+        input_filter=ft.InputFilter(r"[0-9\.]"),
+        on_change=toggle_compra_button
         )
     
     btn_comprar = ft.ElevatedButton(

@@ -20,9 +20,9 @@ def generar_pdf_reporte(cliente_actual, cuenta_actual, tarjeta_actual, EsCuentaA
         pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
 
-        pdf.set_font('Arial', 'B', 16)
-        pdf.cell(0, 10, 'REPORTE FINANCIERO DEL CLIENTE', 0, 1, 'C')
-        pdf.ln(5)
+        pdf.image("../sistema_bancario/img/logo_DevOps.jpg", x=160, y=2, w=30)
+        pdf.image("../sistema_bancario/img/its.png", x=20, y=8, w=30)
+        pdf.ln(25)
 
         # ----------------------------------------------------
         # 2. DATOS DEL CLIENTE
