@@ -1,11 +1,23 @@
 class Cliente:
     def __init__(self, nombre, apellido, dni):
+        # Validaciones básicas
         if not nombre or not apellido or not dni:
             raise ValueError("Todos los campos del cliente son obligatorios.")
-        self.__nombre = nombre
-        self.__apellido = apellido
-        self.__dni = dni
 
+        # Validación: solo letras en nombre y apellido
+        if not nombre.replace(" ", "").isalpha() or not apellido.replace(" ", "").isalpha():
+            raise ValueError(
+                "El nombre y apellido deben contener solo letras.")
+
+        # Validación: solo números en DNI
+        if not dni.isdigit():
+            raise ValueError("El DNI debe contener solo números.")
+
+        self.__nombre = nombre.strip().title()
+        self.__apellido = apellido.strip().title()
+        self.__dni = dni.strip()
+
+    # Métodos getters
     def get_nombre(self):
         return self.__nombre
 

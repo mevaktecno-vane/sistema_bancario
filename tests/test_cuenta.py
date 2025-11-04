@@ -10,6 +10,12 @@ def test_crear_cuenta_valida():
     assert cuenta.get_cliente().get_nombre() == "Juan"
 
 
+def test_no_permitir_saldo_negativo_inicial():
+    cliente = Cliente("Juan", "Perez", "11111111")
+    with pytest.raises(ValueError):
+        Cuenta("002", cliente, saldo=-100)
+
+
 def test_deposito_valido():
     cliente = Cliente("Ana", "Lopez", "22222222")
     cuenta = Cuenta("002", cliente)
@@ -31,8 +37,22 @@ def test_saldo_insuficiente():
         cuenta.retirar(50)
 
 
-def test_monto_no_numerico():
+def test_monto_no_numerico_en_deposito():
     cliente = Cliente("Laura", "Mendez", "55555555")
     cuenta = Cuenta("005", cliente)
     with pytest.raises(TypeError):
         cuenta.depositar("cien")
+
+
+def test_retiro_monto_no_numerico():
+    cliente = Cliente("Mario", "Suarez", "66666666")
+    cuenta = Cuenta("006", cliente, saldo=100)
+    with pytest.raises(TypeError):
+        cuenta.retirar("veinte")
+
+
+def test_retiro_monto_negativo():
+    cliente = Cliente("Sofia", "Ramos", "77777777")
+    cuenta = Cuenta("007", cliente, saldo=100)
+    with pytest.raises(ValueError):
+        cuenta.retirar(-50)
