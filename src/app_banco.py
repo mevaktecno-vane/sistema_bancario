@@ -1,7 +1,7 @@
 import flet as ft
 import threading
 from src.cliente import Cliente
-from src.cuenta import Cuenta
+from src.cuenta import Cuenta, SaldoInsuficienteError
 from src.tarjeta import Tarjeta
 from src.transaccion import Transaccion
 from src.cuenta_ahorro import CuentaAhorro
@@ -16,9 +16,11 @@ def main(page: ft.Page):
     page.vertical_alignment = ft.MainAxisAlignment.START
     page.padding = 30
     page.scroll = ft.ScrollMode.ADAPTIVE
+
     
     estado = {"cliente": None, "cuenta": None, "tarjeta": None} 
     clientes_registrados = []
+
     lista_clientes_column = ft.Column(scroll=ft.ScrollMode.ALWAYS, spacing=5, height=200)
     btn_nuevo_cliente = ft.ElevatedButton(text="➕ Registrar Nuevo Cliente", icon=ft.Icons.PERSON_ADD)
 
@@ -37,10 +39,11 @@ def main(page: ft.Page):
     )
 
     # --- Funciones Auxiliares ---
-    def mostrar_notificacion(texto, color=ft.Colors.GREEN_700):
-        page.snack_bar = ft.SnackBar(ft.Text(texto), bgcolor=color, duration=3000)
+    def mostrar_notificacion(texto, color=ft.Colors.GREEN_700, duracion=3000):
+        page.snack_bar = ft.SnackBar(ft.Text(texto), bgcolor=color, duration=duracion)
         page.snack_bar.open = True
         page.update()
+
         
     def actualizar_historial_transacciones():
         historial_column.controls.clear()
@@ -206,9 +209,17 @@ def main(page: ft.Page):
     btn_registrar_cliente = ft.ElevatedButton(text="Registrar Cliente", icon=ft.Icons.PERSON_ADD)
     
     # --- Interfaz Cuenta ---
-    txt_nro_cuenta = ft.TextField(label="Número de Cuenta", width=300, keyboard_type=ft.KeyboardType.NUMBER)
+    txt_nro_cuenta = ft.TextField(
+        label="Número de Cuenta", 
+        width=300, 
+        input_filter=ft.InputFilter(r"[0-9]"),
+        )
 
-    txt_saldo_inicial = ft.TextField(label="Saldo Inicial", width=300, value="0.0", keyboard_type=ft.KeyboardType.NUMBER)
+    txt_saldo_inicial = ft.TextField(
+        label="Saldo Inicial", 
+        width=300, value="0.0", 
+        keyboard_type=ft.KeyboardType.NUMBER
+        )
 
     txt_interes = ft.TextField(
         label="Tasa de Interés (%)", 
@@ -501,7 +512,7 @@ def main(page: ft.Page):
         
     btn_nuevo_cliente.on_click = reset_formulario_cliente 
     def registrar_cliente(e):
-        nombre, apellido, dni = txt_nombre.value, txt_apellido.value, txt_dni.value
+        nombre, apellido, dni = txt_nombre.value.strip(), txt_apellido.value.strip(), txt_dni.value.strip()
         try:
             nuevo_cliente = Cliente(nombre, apellido, dni)
             clientes_registrados.append(nuevo_cliente)
@@ -514,31 +525,39 @@ def main(page: ft.Page):
             #  ACTUALIZAR LA TARJETA DE CLIENTES
             actualizar_tarjeta_clientes()
             page.update()
+            
         except ValueError as ex:
             mostrar_notificacion(f"Error Cliente: {ex}", ft.Colors.RED_700)
             
     def crear_cuenta(e):
-        nro_cuenta, tipo_cuenta = txt_nro_cuenta.value, dropdown_tipo_cuenta.value
-        if estado["cliente"] is None: mostrar_notificacion("Error: Primero debe registrar un cliente.", ft.Colors.RED_700); return
+        nro_cuenta, tipo_cuenta = txt_nro_cuenta.value.strip(), dropdown_tipo_cuenta.value
+        if not estado["cliente"]:
+            mostrar_notificacion("❌ Primero debe registrar un cliente.", ft.Colors.RED_700)
+            return
+
         try:
             saldo_inicial = float(txt_saldo_inicial.value)
             if tipo_cuenta == "Ahorro":
                 interes = float(txt_interes.value)
-                nueva_cuenta = CuentaAhorro(nro_cuenta=nro_cuenta, cliente=estado["cliente"], saldo=saldo_inicial, interes=interes)
+                nueva_cuenta = CuentaAhorro(nro_cuenta, estado["cliente"], saldo_inicial, interes)
                 btn_aplicar_interes.visible = True
+
             else:
-                nueva_cuenta = Cuenta(nro_cuenta=nro_cuenta, cliente=estado["cliente"], saldo=saldo_inicial)
+                nueva_cuenta = Cuenta(nro_cuenta, estado["cliente"], saldo_inicial)
                 btn_aplicar_interes.visible = False
 
             estado["cuenta"] = nueva_cuenta
-            mostrar_notificacion(f"🎉 ¡Éxito! {nueva_cuenta.__str__()} ", ft.Colors.GREEN_700)
+            mostrar_notificacion(f"✅ Cuenta creada con éxito.", ft.Colors.GREEN_700)
+
             cuenta_form_container.disabled = True
             operaciones_cuenta_contenido.visible = True
             historial_container.visible = True
             btn_depositar.disabled = btn_retirar.disabled = False
             actualizar_saldo_cuenta()
-
-        except ValueError as ex: mostrar_notificacion(f" Error Cuenta: {ex}", ft.Colors.RED_700)
+        except ValueError as ex:
+            mostrar_notificacion(f"⚠️ Error en cuenta: {ex}", ft.Colors.RED_700)
+        except TypeError as ex:
+            mostrar_notificacion(f"⚠️ Error en tipo de dato: {ex}", ft.Colors.RED_700)
 
     def crear_tarjeta(e):
         nro_tarjeta = txt_nro_tarjeta.value
@@ -561,17 +580,21 @@ def main(page: ft.Page):
         try:
             monto = float(txt_monto_cuenta.value)
             estado["cuenta"].depositar(monto)
-            mostrar_notificacion(f" Depósito exitoso de ${monto:.2f}.", ft.Colors.BLUE_GREY_700)
+            mostrar_notificacion(f"💰 Depósito de ${monto:.2f} realizado.", ft.Colors.GREEN_700)
             actualizar_saldo_cuenta()
-        except Exception as ex: mostrar_notificacion(f" Error: {ex}", ft.Colors.RED_700)
+        except (ValueError, TypeError) as ex:
+            mostrar_notificacion(f"❌ Error depósito: {ex}", ft.Colors.RED_700)
+
 
     def retirar(e):
         try:
             monto = float(txt_monto_cuenta.value)
             estado["cuenta"].retirar(monto)
-            mostrar_notificacion(f"Retiro exitoso de ${monto:.2f}.", ft.Colors.BLUE_GREY_700)
+            mostrar_notificacion(f"💸 Retiro de ${monto:.2f} realizado.", ft.Colors.AMBER_700)
             actualizar_saldo_cuenta()
-        except (SaldoInsuficienteError, ValueError) as ex: mostrar_notificacion(f" Error Retiro: {ex}", ft.Colors.RED_700)
+        except (SaldoInsuficienteError, ValueError, TypeError) as ex:
+            mostrar_notificacion(f"⚠️ Error retiro: {ex}", ft.Colors.RED_700)
+
 
     def aplicar_interes(e):
         if isinstance(estado["cuenta"], CuentaAhorro):
