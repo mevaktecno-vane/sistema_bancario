@@ -1,6 +1,6 @@
 from src.transaccion import Transaccion
 
-class LimiteExcedidoError(Exception): pass
+
 class SaldoInsuficienteError(Exception):
     """Excepción personalizada para saldo insuficiente."""
     pass
@@ -8,10 +8,13 @@ class SaldoInsuficienteError(Exception):
 
 class Cuenta:
     def __init__(self, nro_cuenta: str, cliente, saldo: float = 0.0):
-        if not nro_cuenta:
-            raise ValueError("El número de cuenta no puede estar vacío.")
+        if not nro_cuenta or not isinstance(nro_cuenta, str):
+            raise ValueError(
+                "El número de cuenta debe ser una cadena no vacía.")
         if saldo < 0:
             raise ValueError("El saldo inicial no puede ser negativo.")
+        if cliente is None:
+            raise ValueError("Debe asignarse un cliente válido a la cuenta.")
 
         self.__nro_cuenta = nro_cuenta
         self.__cliente = cliente
@@ -28,16 +31,21 @@ class Cuenta:
     def get_cliente(self):
         return self.__cliente
 
+    def get_transacciones(self):
+        return self.__transacciones
+
     # Operaciones
     def depositar(self, monto: float):
+        """Agrega dinero a la cuenta."""
         if not isinstance(monto, (int, float)):
-            raise TypeError("El monto del deposito debe ser un número.")
+            raise TypeError("El monto del depósito debe ser un número.")
         if monto <= 0:
-            raise ValueError("El monto del deposito debe ser mayor a cero.")
+            raise ValueError("El monto del depósito debe ser mayor a cero.")
         self.__saldo += monto
         self.__transacciones.append(Transaccion("deposito", monto))
 
     def retirar(self, monto: float):
+        """Retira dinero de la cuenta si hay saldo suficiente."""
         if not isinstance(monto, (int, float)):
             raise TypeError("El monto del retiro debe ser un número.")
         if monto <= 0:
@@ -49,7 +57,7 @@ class Cuenta:
         self.__transacciones.append(Transaccion("retiro", monto))
 
     def mostrar_transacciones(self):
+        """Devuelve una lista legible de las transacciones realizadas."""
+        if not self.__transacciones:
+            return ["No hay transacciones registradas."]
         return [str(t) for t in self.__transacciones]
-
-    def get_transacciones(self): 
-        return self.__transacciones
