@@ -329,7 +329,7 @@ def main(page: ft.Page):
                      horizontal_alignment=ft.CrossAxisAlignment.START, 
                      spacing=10
                      ),
-        padding=10, border_radius=10, border=ft.border.all(1, ft.Colors.GREY_300), width=350, visible=False
+        padding=10, border_radius=10, width=350, visible=False
     )
 
     # --- Historial de Movimientos de Tarjeta ---
@@ -346,7 +346,7 @@ def main(page: ft.Page):
                      horizontal_alignment=ft.CrossAxisAlignment.START, 
                      spacing=10
                      ),
-        padding=10, border_radius=10, border=ft.border.all(1, ft.Colors.GREY_300), width=350, visible=False
+        padding=10, border_radius=10, width=350, visible=False
     )
 
     # Contenedores de Formulario y Operaciones
@@ -384,7 +384,6 @@ def main(page: ft.Page):
         ),
         padding=20,
         border_radius=10,
-        border=ft.border.all(1, ft.Colors.PURPLE_200),
         width=350,
         height=380 
     )
@@ -425,7 +424,7 @@ def main(page: ft.Page):
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER
         ),
-        padding=20, border_radius=10, border=ft.border.all(1, ft.Colors.INDIGO_200), width=370, visible=False,
+        padding=20, border_radius=10, width=370, visible=False,
     )
 
     contenedor_operaciones_tarjeta_final = ft.Container(
@@ -437,7 +436,7 @@ def main(page: ft.Page):
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER
         ),
-        padding=20, border_radius=10, border=ft.border.all(1, ft.Colors.ORANGE_200), width=370, visible=False,
+        padding=20, border_radius=10, width=370, visible=False,
     )
 
     # ----------------- Lógica del Negocio de la Aplicación -----------------
@@ -650,7 +649,7 @@ def main(page: ft.Page):
 
     cliente_container = ft.Container(
         content=ft.Column([ft.Text("1. Datos del Cliente", size=20, weight=ft.FontWeight.BOLD), txt_nombre, txt_apellido, txt_dni, btn_registrar_cliente], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10),
-        padding=20, border_radius=10, border=ft.border.all(1, ft.Colors.BLUE_200), width=350,
+        padding=20, border_radius=10, width=350,
     )
     
     page.add(
