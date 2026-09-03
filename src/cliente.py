@@ -32,3 +32,23 @@ class Cliente:
 
     def __str__(self):
         return self.mostrar_datos()
+
+
+def editar_cliente(self, nuevo_nombre, nuevo_apellido, nuevo_dni):
+    if not nuevo_nombre or not nuevo_apellido or not nuevo_dni:
+        raise ValueError("Todos los campos del cliente son obligatorios.")
+
+    if (
+        not nuevo_nombre.replace(" ", "").isalpha()
+        or not nuevo_apellido.replace(" ", "").isalpha()
+    ):
+        raise ValueError(
+            "El nombre y apellido deben contener solo letras."
+        )
+
+    if not nuevo_dni.isdigit():
+        raise ValueError("El DNI debe contener solo números.")
+
+    self.__nombre = nuevo_nombre.strip().title()
+    self.__apellido = nuevo_apellido.strip().title()
+    self.__dni = nuevo_dni.strip()
