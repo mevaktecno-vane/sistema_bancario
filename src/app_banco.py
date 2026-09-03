@@ -6,9 +6,13 @@ from src.tarjeta import Tarjeta
 from src.transaccion import Transaccion
 from src.cuenta_ahorro import CuentaAhorro
 from src.exportar_datos_a_pdf import generar_pdf_reporte
+from src.dao import DAO
 
 class SaldoInsuficienteError(Exception): pass
 class LimiteExcedidoError(Exception): pass 
+
+# ====== INICIALIZAR DAO ======
+dao = DAO("sistema_bancario.db")
 
 # --- Función Principal (main)---
 def main(page: ft.Page):
@@ -18,8 +22,10 @@ def main(page: ft.Page):
     page.scroll = ft.ScrollMode.ADAPTIVE
 
     
-    estado = {"cliente": None, "cuenta": None, "tarjeta": None} 
-    clientes_registrados = []
+    estado = {"id_cliente": None, "id_cuenta": None, "id_tarjeta": None}
+    
+    # Cargar clientes desde BD
+    clientes_db = dao.obtener_todos_clientes()
 
     lista_clientes_column = ft.Column(scroll=ft.ScrollMode.ALWAYS, spacing=5, height=200)
     btn_nuevo_cliente = ft.ElevatedButton(text="➕ Registrar Nuevo Cliente", icon=ft.Icons.PERSON_ADD)

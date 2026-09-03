@@ -104,6 +104,7 @@ Archivo requirements.txt:
 
 flet
 fpdf
+SQLAlchemy
 pytest
 
 Control de Versiones y Trabajo Colaborativo
@@ -153,6 +154,13 @@ venv\Scripts\activate  # En Windows
 Instalar dependencias:
 
 pip install -r requirements.txt
+
+
+Generar el diagrama entidad-relación:
+
+python docs/generar_diagrama_er.py
+
+El resultado se guarda en `docs/diagrama_entidad_relacion.mmd` y puede visualizarse con cualquier visor compatible con Mermaid.
 
 
 Ejecutar la aplicación:
