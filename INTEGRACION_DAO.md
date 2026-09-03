@@ -1,172 +1,114 @@
-# Guía de Integración de DAO en app_banco.py
+# Integracion del DAO
 
-## Estado Actual
+## Estado actual
 
-El archivo `app_banco.py` usa listas en memoria (`clientes_registrados`, `cuentas`, `tarjetas`) que no persisten entre sesiones.
+El proyecto tiene dos usos del DAO:
 
-## Plan de Integración
+- `main.py` usa SQLite para guardar y consultar clientes, cuentas y tarjetas.
+- `programa_dao.py` ejecuta una demostracion completa y persistente de todas las operaciones del DAO.
+- `src/app_banco.py` inicializa el DAO y carga los clientes existentes, pero sus operaciones de cuenta y tarjeta todavia trabajan principalmente con objetos en memoria.
 
-### 1. Ya Implementado ✅
-- Importación del DAO: `from src.dao import DAO`
-- Inicialización: `dao = DAO("sistema_bancario.db")`
-- Cambio en estructura de estado: `estado = {"id_cliente": None, "id_cuenta": None, "id_tarjeta": None}`
-- Cargar clientes desde BD al iniciar
+La base de datos utilizada por los programas es `sistema_bancario.db`. El DAO crea las tablas automaticamente al inicializarse.
 
-### 2. Cambios Necesarios en Funciones Principales
+## Operaciones disponibles en DAO
 
-#### Función: `registrar_cliente(e)`
-**Cambio**: En lugar de agregar a `clientes_registrados`, guardar en DAO
+### Conexion y tablas
 
 ```python
-# ANTES:
-cliente = Cliente(nombre, apellido, dni)
-clientes_registrados.append(cliente)
-
-# DESPUÉS:
-cliente = Cliente(nombre, apellido, dni)
-id_cliente = dao.guardar_cliente(cliente)
-estado["id_cliente"] = id_cliente
+dao = DAO("sistema_bancario.db")
+dao.create_tables()
+session = dao.connect()
+session.close()
+dao.cerrar_conexion()
 ```
 
-#### Función: `crear_cuenta(e)`
-**Cambio**: Guardar en DAO en lugar de en memoria
+### Clientes
 
 ```python
-# ANTES:
-nueva_cuenta = Cuenta(nro_cuenta, estado["cliente"], saldo_inicial)
-estado["cuenta"] = nueva_cuenta
-
-# DESPUÉS:
-id_cuenta = dao.guardar_cuenta(nro_cuenta, estado["id_cliente"], tipo_cuenta, saldo_inicial, interes)
-estado["id_cuenta"] = id_cuenta
+id_cliente = dao.guardar_cliente(Cliente("Lucia", "Gomez", "30123456"))
+cliente = dao.obtener_cliente_por_dni("30123456")
+clientes = dao.obtener_todos_clientes()
 ```
 
-#### Función: `depositar(e)`
-**Cambio**: Actualizar BD después de depósito
+### Cuentas
 
 ```python
-# DESPUÉS DEL DEPÓSITO:
-dao.guardar_transaccion(estado["id_cuenta"], "deposito", monto)
-estado_cuenta = dao.obtener_cuentas_por_cliente(estado["id_cliente"])
-nuevo_saldo = estado_cuenta[0][4]  # campo saldo
-dao.actualizar_saldo_cuenta(estado["id_cuenta"], nuevo_saldo)
+id_cuenta = dao.guardar_cuenta(
+    "CA-0001", id_cliente, "Ahorro", saldo=1200.0, tasa_interes=2.5
+)
+cuentas = dao.obtener_cuentas_por_cliente(id_cliente)
+cuenta = dao.obtener_cuenta_por_numero("CA-0001")
+dao.actualizar_saldo_cuenta(id_cuenta, 1600.0)
 ```
 
-#### Función: `crear_tarjeta(e)`
-**Cambio**: Guardar en DAO
+### Tarjetas
 
 ```python
-# DESPUÉS:
-id_tarjeta = dao.guardar_tarjeta(nro_tarjeta, estado["id_cliente"], limite)
-estado["id_tarjeta"] = id_tarjeta
+id_tarjeta = dao.guardar_tarjeta(
+    "4500-0000-0000-0001", id_cliente, limite_credito=3000.0
+)
+tarjetas = dao.obtener_tarjetas_por_cliente(id_cliente)
+dao.actualizar_saldo_tarjeta(id_tarjeta, 200.0)
 ```
 
-### 3. Funciones Que Necesitan Refactorización
-
-| Función | Cambio Necesario |
-|---------|------------------|
-| `actualizar_tarjeta_clientes()` | Cargar desde `dao.obtener_todos_clientes()` |
-| `seleccionar_cliente()` | Usar `estado["id_cliente"]` en lugar de objeto |
-| `reset_formulario_cliente()` | Limpiar IDs en estado |
-| `guardar_cliente()` (en app_banco) | Llamar a `dao.guardar_cliente()` |
-| `depositar()` | Guardar transacción en DAO + actualizar BD |
-| `retirar()` | Guardar transacción en DAO + actualizar BD |
-| `comprar()` | Guardar movimiento en DAO |
-| `pagar()` | Guardar movimiento en DAO |
-
-### 4. Carga de Datos al Iniciar
-
-En `main(page)`, después de inicializar el DAO:
+### Historiales
 
 ```python
-# Cargar clientes desde BD
-clientes_db = dao.obtener_todos_clientes()
+dao.guardar_transaccion(id_cuenta, "deposito", 500.0)
+transacciones = dao.obtener_transacciones_por_cuenta(id_cuenta)
 
-# Actualizar interfaz con clientes existentes
-for cliente_data in clientes_db:
-    id_cliente = cliente_data[0]
-    nombre = cliente_data[1]
-    apellido = cliente_data[2]
-    dni = cliente_data[3]
-    
-    # Agregar a la UI
-    btn = ft.ElevatedButton(
-        text="Seleccionar",
-        on_click=lambda e, cid=id_cliente: seleccionar_cliente(cid)
-    )
-    lista_clientes_column.controls.append(
-        ft.Row([ft.Text(f"{nombre} {apellido}"), btn])
-    )
+dao.guardar_movimiento_tarjeta(id_tarjeta, "Compra", 250.0)
+movimientos = dao.obtener_movimientos_por_tarjeta(id_tarjeta)
 ```
 
-### 5. Funciones Auxiliares Para Trabajar con BD
+### Limpieza
+
+`limpiar_base_datos()` elimina todos los registros respetando el orden de las
+relaciones. Es una operacion destructiva y no se ejecuta en el flujo normal de
+`programa_dao.py`; solo se activa con:
+
+```powershell
+python programa_dao.py --limpiar
+```
+
+## Pendientes en `src/app_banco.py`
+
+La interfaz Flet todavia necesita completar la integracion para que todas sus
+operaciones persistan en SQLite:
+
+1. Guardar el cliente con `dao.guardar_cliente()` y conservar su ID.
+2. Crear cuentas con `dao.guardar_cuenta()` y consultar sus saldos desde la BD.
+3. Crear tarjetas con `dao.guardar_tarjeta()` y consultar su deuda desde la BD.
+4. En depositos, retiros e intereses, guardar la transaccion y actualizar el saldo.
+5. En compras y pagos, guardar el movimiento y actualizar el saldo de la tarjeta.
+6. Cargar los historiales desde `obtener_transacciones_por_cuenta()` y
+   `obtener_movimientos_por_tarjeta()` al seleccionar una cuenta o tarjeta.
+7. Cerrar el DAO cuando se cierre la ventana de Flet.
+
+El estado recomendado para la interfaz es:
 
 ```python
-def obtener_saldo_cuenta(id_cuenta):
-    """Obtiene el saldo actual de una cuenta desde la BD."""
-    cuentas = dao.obtener_cuentas_por_cliente(estado["id_cliente"])
-    for cuenta in cuentas:
-        if cuenta[0] == id_cuenta:  # id_cuenta es el primer campo
-            return cuenta[4]  # saldo es el quinto campo
-    return 0.0
-
-def obtener_deuda_tarjeta(id_tarjeta):
-    """Obtiene la deuda actual de una tarjeta desde la BD."""
-    tarjetas = dao.obtener_tarjetas_por_cliente(estado["id_cliente"])
-    for tarjeta in tarjetas:
-        if tarjeta[0] == id_tarjeta:  # id_tarjeta es el primer campo
-            return tarjeta[4]  # saldo_actual es el quinto campo
-    return 0.0
+estado = {
+    "id_cliente": None,
+    "id_cuenta": None,
+    "id_tarjeta": None,
+}
 ```
 
-### 6. Persistencia de Transacciones
+Los IDs deben utilizarse para consultar y actualizar la base de datos. Los
+objetos de dominio pueden mantenerse para mostrar la interfaz, pero no deben
+ser la unica fuente de datos persistentes.
 
-Cada operación debe:
-1. Modificar el estado local
-2. Guardar en la BD
-3. Actualizar la UI
+## Ejemplos ejecutables
 
-Ejemplo:
-```python
-def depositar(e):
-    try:
-        monto = float(txt_monto_cuenta.value)
-        
-        # 1. Crear transacción en BD
-        dao.guardar_transaccion(estado["id_cuenta"], "deposito", monto)
-        
-        # 2. Obtener nuevo saldo
-        cuenta_data = dao.obtener_cuentas_por_cliente(estado["id_cliente"])[0]
-        nuevo_saldo = cuenta_data[4] + monto
-        
-        # 3. Actualizar BD
-        dao.actualizar_saldo_cuenta(estado["id_cuenta"], nuevo_saldo)
-        
-        # 4. Actualizar UI
-        mostrar_notificacion(f"💰 Depósito de ${monto:.2f} realizado")
-        actualizar_saldo_cuenta()
-    except Exception as ex:
-        mostrar_notificacion(f"❌ Error: {ex}")
+Demostracion completa del DAO:
+
+```powershell
+python programa_dao.py
 ```
 
-### 7. Al Cerrar la Aplicación
+Ejemplo basico de persistencia:
 
-```python
-def on_close(e):
-    """Cierra la conexión a la BD al cerrar la app."""
-    dao.cerrar_conexion()
-    page.window_destroy()
-
-page.window_on_close = on_close
+```powershell
+python main.py
 ```
-
-## Próximos Pasos
-
-1. Reemplazar todas las referencias a `clientes_registrados` con llamadas al DAO
-2. Usar `estado["id_cliente"]`, `estado["id_cuenta"]`, `estado["id_tarjeta"]` en lugar de objetos
-3. Guardar cada operación en la BD con `dao.guardar_transaccion()` y `dao.guardar_movimiento_tarjeta()`
-4. Actualizar la UI para mostrar datos desde la BD
-
-## Ejemplo Completo Refactorizado
-
-Ver archivo `app_banco_persistente.py` (si se crea)
