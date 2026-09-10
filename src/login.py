@@ -7,11 +7,11 @@ LOGO_PATH = os.path.join(BASE_DIR, "img", "logo_clean.png")
 def render_login(page: ft.Page):
     page.title = "Capital Bank - Login"
     page.window_width = 420
-    page.window_height = 650
+    page.window_height = 680
     page.window_resizable = False
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
-    page.bgcolor = "#e0e0e0"
+    page.bgcolor = "#0a0a0f"
 
     dni_input = ft.TextField(
         hint_text="DNI",
@@ -47,7 +47,7 @@ def render_login(page: ft.Page):
             mostrar_mensaje("Por favor ingresa tu DNI y Clave", es_error=True)
             return
 
-        mostrar_mensaje(f"DNI: {dni}", es_error=False)
+        mostrar_mensaje(f"Iniciando sesión con DNI: {dni}...", es_error=False)
 
     def mostrar_mensaje(texto, es_error=False):
         page.snack_bar = ft.SnackBar(
@@ -69,41 +69,64 @@ def render_login(page: ft.Page):
         width=300
     )
 
+    btn_olvido = ft.TextButton(
+        content=ft.Text("¿Olvidaste tu clave?", size=12, color="#a855f7"),
+        on_click=lambda _: mostrar_mensaje("Contacta a soporte técnico", es_error=False)
+    )
+
     login_card = ft.Container(
         width=340,
         padding=30,
-        bgcolor="#1c1c1c",
+        bgcolor="#181820",
         border_radius=20,
+        border=ft.Border.all(1, "#2d1b4e"),
         shadow=ft.BoxShadow(
-            blur_radius=20,
-            color="black",
-            offset=ft.Offset(0, 10)
+            blur_radius=25,
+            color="#8b2fc9",
+            offset=ft.Offset(0, 0)
         ),
         content=ft.Column(
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=20,
+            spacing=18,
             controls=[
-                # Logo con centrado absoluto coincidente con la estructura de la tarjeta
                 ft.Container(
                     content=ft.Image(
                         src=LOGO_PATH,
-                        width=150,
-                        height=150,
+                        width=140,
+                        height=140,
                         fit="contain",
                     ),
                     alignment=ft.Alignment(0, 0),
                     width=280
                 ),
-                ft.Container(height=5),
+                ft.Container(height=2),
                 dni_input,
                 clave_input,
-                ft.Container(height=5),
-                btn_ingresar
+                ft.Container(height=2),
+                btn_ingresar,
+                btn_olvido
             ]
         )
     )
 
-    page.add(login_card)
+    footer = ft.Text(
+        "© 2026 Capital Bank • Sistema Bancario Seguro",
+        size=11,
+        color="#555566",
+        text_align=ft.TextAlign.CENTER
+    )
+
+    main_layout = ft.Column(
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        alignment=ft.MainAxisAlignment.CENTER,
+        spacing=25,
+        controls=[
+            login_card,
+            footer
+        ]
+    )
+
+    page.add(main_layout)
 
 if __name__ == "__main__":
     ft.run(render_login)
