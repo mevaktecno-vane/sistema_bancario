@@ -1,18 +1,26 @@
-# Integracion del DAO
+# Integración del DAO
 
 ## Estado actual
 
-El proyecto tiene dos usos del DAO:
+El proyecto usa SQLite con SQLAlchemy para persistir el esquema bancario actual:
 
-- `main.py` usa SQLite para guardar y consultar clientes, cuentas y tarjetas.
-- `programa_dao.py` ejecuta una demostracion completa y persistente de todas las operaciones del DAO.
-- `src/app_banco.py` inicializa el DAO y carga los clientes existentes, pero sus operaciones de cuenta y tarjeta todavia trabajan principalmente con objetos en memoria.
+- `persona` y sus subtipos `cliente` y `empleado`
+- `tipo_cuenta` y `cuenta`
+- `tipo_transaccion` y `transaccion`
 
-La base de datos utilizada por los programas es `sistema_bancario.db`. El DAO crea las tablas automaticamente al inicializarse.
+El DAO crea automáticamente las tablas al inicializarse y se usa principalmente para:
 
-## Operaciones disponibles en DAO
+- registrar clientes y empleados
+- autenticar por DNI y password
+- crear cuentas asociadas a clientes
+- registrar transacciones por tipo
+- consultar el esquema y los datos persistidos
 
-### Conexion y tablas
+La base de datos usada por la aplicación es `sistema_bancario.db`.
+
+## Operaciones disponibles en el DAO
+
+### Conexión y tablas
 
 ```python
 dao = DAO("sistema_bancario.db")
@@ -22,92 +30,108 @@ session.close()
 dao.cerrar_conexion()
 ```
 
+
 ### Clientes
 
 ```python
-id_cliente = dao.guardar_cliente(Cliente("Lucia", "Gomez", "30123456"))
+from src.cliente import Cliente
+
+id_cliente = dao.guardar_cliente(Cliente("Lucia", "Gomez", "30123456", categoria="NORMAL", estado="ACTIVO"))
 cliente = dao.obtener_cliente_por_dni("30123456")
-clientes = dao.obtener_todos_clientes()
 ```
 
-### Cuentas
+### Empleados
 
 ```python
-id_cuenta = dao.guardar_cuenta(
-    "CA-0001", id_cliente, "Ahorro", saldo=1200.0, tasa_interes=2.5
+from src.empleado import Empleado
+
+id_empleado = dao.guardar_empleado(
+    Persona("Pedro", "López", "28765432", "pass123"),
+    legajo="E-001",
+    cargo="Analista",
+    departamento="Atención al cliente",
+    fecha_ingreso="2024-01-15",
+    salario=65000.0,
+    sucursal="Sucursal Central",
 )
+```
+
+### Tipos y cuentas
+
+```python
+id_tipo_cuenta = dao.guardar_tipo_cuenta("Ahorro", "Cuenta de ahorro")
+id_tipo_transaccion = dao.guardar_tipo_transaccion("pagoIntereses", "Pago de intereses")
+
+id_cuenta = dao.guardar_cuenta(
+    nro_cuenta="CA-0001",
+    id_cliente=id_cliente,
+    id_tipo_cuenta=id_tipo_cuenta,
+    saldo=1200.0,
+    tasa_interes=2.5,
+)
+
 cuentas = dao.obtener_cuentas_por_cliente(id_cliente)
 cuenta = dao.obtener_cuenta_por_numero("CA-0001")
 dao.actualizar_saldo_cuenta(id_cuenta, 1600.0)
 ```
 
-### Tarjetas
+### Transacciones
 
 ```python
-id_tarjeta = dao.guardar_tarjeta(
-    "4500-0000-0000-0001", id_cliente, limite_credito=3000.0
-)
-tarjetas = dao.obtener_tarjetas_por_cliente(id_cliente)
-dao.actualizar_saldo_tarjeta(id_tarjeta, 200.0)
+id_transaccion = dao.guardar_transaccion(id_cuenta, "deposito", 500.0)
+transacciones = dao.obtener_transacciones_por_cuenta(id_cuenta)
 ```
 
-### Historiales
+También es válido pasar el tipo por nombre desde el catálogo:
 
 ```python
-dao.guardar_transaccion(id_cuenta, "deposito", 500.0)
-transacciones = dao.obtener_transacciones_por_cuenta(id_cuenta)
+id_transaccion = dao.guardar_transaccion(id_cuenta, "pagoIntereses", 150.0)
+```
 
-dao.guardar_movimiento_tarjeta(id_tarjeta, "Compra", 250.0)
-movimientos = dao.obtener_movimientos_por_tarjeta(id_tarjeta)
+### Login
+
+```python
+login_ok = dao.validar_login_por_dni("30123456", "miPassword123")
 ```
 
 ### Limpieza
 
-`limpiar_base_datos()` elimina todos los registros respetando el orden de las
-relaciones. Es una operacion destructiva y no se ejecuta en el flujo normal de
-`programa_dao.py`; solo se activa con:
+`limpiar_base_datos()` elimina todos los registros respetando el orden de las relaciones. Es una operación destructiva y no se usa en el flujo normal de la app.
 
-```powershell
-python programa_dao.py --limpiar
-```
+## Modelo actual del dominio
 
-## Pendientes en `src/app_banco.py`
+El proyecto se organiza con la siguiente separación:
 
-La interfaz Flet todavia necesita completar la integracion para que todas sus
-operaciones persistan en SQLite:
+- `Persona`: validación y hashing compartidos
+- `Cliente(Persona)`: datos propios del cliente
+- `Empleado(Persona)`: datos propios del empleado
+- `Cuenta`: lógica de operación bancaria y estado de saldo
+- `CuentaAhorro(Cuenta)`: comportamiento específico de cuenta de ahorro
+- `Transaccion`: representa una operación del catálogo `tipo_transaccion`
 
-1. Guardar el cliente con `dao.guardar_cliente()` y conservar su ID.
-2. Crear cuentas con `dao.guardar_cuenta()` y consultar sus saldos desde la BD.
-3. Crear tarjetas con `dao.guardar_tarjeta()` y consultar su deuda desde la BD.
-4. En depositos, retiros e intereses, guardar la transaccion y actualizar el saldo.
-5. En compras y pagos, guardar el movimiento y actualizar el saldo de la tarjeta.
-6. Cargar los historiales desde `obtener_transacciones_por_cuenta()` y
-   `obtener_movimientos_por_tarjeta()` al seleccionar una cuenta o tarjeta.
-7. Cerrar el DAO cuando se cierre la ventana de Flet.
+La capa ORM queda en `src/models.py` y refleja exactamente el esquema de la base de datos.
 
-El estado recomendado para la interfaz es:
+## Pendientes de integración
 
-```python
-estado = {
-    "id_cliente": None,
-    "id_cuenta": None,
-    "id_tarjeta": None,
-}
-```
+La aplicación puede seguir usando el DAO como fuente principal para:
 
-Los IDs deben utilizarse para consultar y actualizar la base de datos. Los
-objetos de dominio pueden mantenerse para mostrar la interfaz, pero no deben
-ser la unica fuente de datos persistentes.
+1. registrar personas y clientes
+2. crear cuentas asociadas a clientes
+3. guardar transacciones con el tipo correcto
+4. leer historial de movimientos desde `obtener_transacciones_por_cuenta()`
+5. validar autenticación con DNI y password hash
+
+El flujo recomendado es que cada operación de negocio persista en SQLite a través del DAO, y que los objetos de dominio se usen para mostrar información y lógica local, pero nunca como única fuente de verdad.
 
 ## Ejemplos ejecutables
 
-Demostracion completa del DAO:
+Comprobar el esquema y API del DAO:
 
 ```powershell
-python programa_dao.py
+python -m pytest tests/test_dao_schema.py -q
 ```
 
-Ejemplo basico de persistencia:
+Ejecutar un ejemplo básico de persistencia:
 
 ```powershell
 python main.py

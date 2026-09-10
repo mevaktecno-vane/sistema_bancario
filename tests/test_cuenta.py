@@ -1,4 +1,6 @@
 import pytest
+from datetime import datetime
+
 from src.cliente import Cliente
 from src.cuenta import Cuenta, SaldoInsuficienteError
 
@@ -8,6 +10,43 @@ def test_crear_cuenta_valida():
     cuenta = Cuenta("001", cliente, saldo=500.0)
     assert cuenta.get_saldo() == 500.0
     assert cuenta.get_cliente().get_nombre() == "Juan"
+
+
+def test_cuenta_se_relaciona_con_la_tabla_cuenta_de_db():
+    cliente = Cliente("Ana", "Lopez", "22222222")
+    fecha = datetime(2024, 1, 10, 12, 30)
+
+    cuenta = Cuenta(
+        "002",
+        cliente,
+        saldo=1000.0,
+        id_cuenta=7,
+        id_cliente=3,
+        id_tipo_cuenta=2,
+        tasa_interes=2.5,
+        fecha_creacion=fecha,
+    )
+
+    assert cuenta.get_id_cuenta() == 7
+    assert cuenta.get_id_cliente() == 3
+    assert cuenta.get_id_tipo_cuenta() == 2
+    assert cuenta.get_tasa_interes() == 2.5
+    assert cuenta.get_fecha_creacion() == fecha
+
+
+def test_cuenta_from_db_row():
+    cliente = Cliente("Carlos", "Diaz", "33333333")
+    fecha = datetime(2024, 2, 5, 9, 0)
+    row = (8, "003", 5, 1, 1500.0, 3.0, fecha)
+
+    cuenta = Cuenta.from_db_row(row, cliente)
+
+    assert cuenta.get_id_cuenta() == 8
+    assert cuenta.get_id_cliente() == 5
+    assert cuenta.get_id_tipo_cuenta() == 1
+    assert cuenta.get_nro_cuenta() == "003"
+    assert cuenta.get_saldo() == 1500.0
+    assert cuenta.get_tasa_interes() == 3.0
 
 
 def test_no_permitir_saldo_negativo_inicial():
