@@ -25,6 +25,7 @@ __pycache__/
 *.pdf
 *.xlsx
 *.csv
+*.db
 
 # --- Configuración de IDEs (VS Code, PyCharm, etc.) ---
 .vscode/
