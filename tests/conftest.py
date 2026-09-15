@@ -2,15 +2,15 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-# NOTA: Importamos la Base de modelos.
+# Intenta importar la Base de SQLAlchemy si existe
 try:
     from src.models import Base
-except ImportError:
+except Exception:
     Base = None
 
 @pytest.fixture
 def db_session():
-    """Fixture que provee una sesión de base de datos SQLite en memoria para tests aislados."""
+    """Fixture que provee una sesión de base de datos SQLite en memoria."""
     engine = create_engine("sqlite:///:memory:")
     
     if Base is not None:
