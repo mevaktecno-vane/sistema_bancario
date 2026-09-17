@@ -6,6 +6,7 @@ from src.tarjeta import Tarjeta
 from src.transaccion import Transaccion
 from src.cuenta_ahorro import CuentaAhorro
 from src.exportar_datos_a_pdf import generar_pdf_reporte
+from src.saldo_actual import SaldoActual
 
 class SaldoInsuficienteError(Exception): pass
 class LimiteExcedidoError(Exception): pass 
@@ -18,7 +19,13 @@ def main(page: ft.Page):
     page.scroll = ft.ScrollMode.ADAPTIVE
 
     
-    estado = {"cliente": None, "cuenta": None, "tarjeta": None} 
+    estado = {
+    "cliente": None, 
+    "cuenta": None, 
+    "tarjeta": None,
+    "monitor_saldo_cuenta": None,
+    "monitor_saldo_tarjeta": None
+    } 
     clientes_registrados = []
 
     lista_clientes_column = ft.Column(scroll=ft.ScrollMode.ALWAYS, spacing=5, height=200)
@@ -547,6 +554,7 @@ def main(page: ft.Page):
                 btn_aplicar_interes.visible = False
 
             estado["cuenta"] = nueva_cuenta
+            estado["monitor_saldo_cuenta"] = SaldoActual(nueva_cuenta)
             mostrar_notificacion(f"✅ Cuenta creada con éxito.", ft.Colors.GREEN_700)
 
             cuenta_form_container.disabled = True
@@ -580,6 +588,9 @@ def main(page: ft.Page):
         try:
             monto = float(txt_monto_cuenta.value)
             estado["cuenta"].depositar(monto)
+
+            detalle = estado["monitor_saldo_cuenta"].registrar_evento("Depósito", monto)
+            
             mostrar_notificacion(f"💰 Depósito de ${monto:.2f} realizado.", ft.Colors.GREEN_700)
             actualizar_saldo_cuenta()
         except (ValueError, TypeError) as ex:
@@ -590,6 +601,8 @@ def main(page: ft.Page):
         try:
             monto = float(txt_monto_cuenta.value)
             estado["cuenta"].retirar(monto)
+
+            detalle = estado["monitor_saldo_cuenta"].registrar_evento("Retiro", monto)
             mostrar_notificacion(f"💸 Retiro de ${monto:.2f} realizado.", ft.Colors.AMBER_700)
             actualizar_saldo_cuenta()
         except (SaldoInsuficienteError, ValueError, TypeError) as ex:

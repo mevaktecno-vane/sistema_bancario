@@ -36,16 +36,18 @@ class Cuenta:
 
     # Operaciones
     def depositar(self, monto: float):
-        """Agrega dinero a la cuenta."""
+        """Agrega dinero a la cuenta y retorna el saldo actualizado"""
         if not isinstance(monto, (int, float)):
             raise TypeError("El monto del depósito debe ser un número.")
         if monto <= 0:
             raise ValueError("El monto del depósito debe ser mayor a cero.")
+
         self.__saldo += monto
         self.__transacciones.append(Transaccion("deposito", monto))
+        return self.__saldo
 
     def retirar(self, monto: float):
-        """Retira dinero de la cuenta si hay saldo suficiente."""
+        """Retira dinero de la cuenta si hay saldo suficiente y retorna el saldo actualizado."""
         if not isinstance(monto, (int, float)):
             raise TypeError("El monto del retiro debe ser un número.")
         if monto <= 0:
@@ -53,8 +55,12 @@ class Cuenta:
         if monto > self.__saldo:
             raise SaldoInsuficienteError(
                 "Saldo insuficiente para realizar el retiro.")
+        
         self.__saldo -= monto
         self.__transacciones.append(Transaccion("retiro", monto))
+        return self.__saldo
+
+
 
     def mostrar_transacciones(self):
         """Devuelve una lista legible de las transacciones realizadas."""

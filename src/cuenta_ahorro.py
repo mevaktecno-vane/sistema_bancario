@@ -12,9 +12,10 @@ class CuentaAhorro(Cuenta):
         return self.__interes
 
     def aplicar_interes(self):
-        """Aplica el interés al saldo actual."""
+        """Aplica el interés y lo acredita usando la logica de depósito."""
         saldo_actual = self.get_saldo()
-        nuevo_saldo = saldo_actual + (saldo_actual * self.__interes / 100)
-        # Actualizamos el saldo internamente
-        self._Cuenta__saldo = nuevo_saldo  # usamos el atributo protegido de la clase base
-        return nuevo_saldo
+        interes_ganado = saldo_actual * (self.__interes / 100)
+        if interes_ganado > 0:
+            self.depositar(interes_ganado)
+        return self.get_saldo()
+       
