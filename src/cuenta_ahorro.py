@@ -6,7 +6,7 @@ class CuentaAhorro(Cuenta):
         super().__init__(nro_cuenta, cliente, saldo)
         if interes < 0:
             raise ValueError("La tasa de interés no puede ser negativa.")
-        self.__interes = interes
+        self.__interes = float(interes)
 
     def get_interes(self):
         return self.__interes
@@ -16,6 +16,7 @@ class CuentaAhorro(Cuenta):
         saldo_actual = self.get_saldo()
         interes_ganado = saldo_actual * (self.__interes / 100)
         if interes_ganado > 0:
-            self.depositar(interes_ganado)
+            # Pasa 'pagoIntereses' para que coincida con el catálogo de tipo_transaccion de la BD
+            self.depositar(interes_ganado, tipo_transaccion="pagoIntereses")
         return self.get_saldo()
        

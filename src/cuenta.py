@@ -18,8 +18,17 @@ class Cuenta:
 
         self.__nro_cuenta = nro_cuenta
         self.__cliente = cliente
-        self.__saldo = saldo
+        self.__saldo = float(saldo)
         self.__transacciones = []
+        self._dao = dao
+        self._id_cuenta = self._id_cuenta
+
+        # Si se pasó el DAO pero no el id_cuenta, intentamos resolver el id por nro_cuenta
+        if self._dao and self._id_cuenta is None:
+            cuenta_bd = self._dao.obtener_cuenta_por_numero(self.__nro_cuenta)
+            if cuenta_bd:
+                # cuenta_bd puede ser un objeto modelo o una tupla según el DAO
+                self._id_cuenta = getattr(cuenta_bd, "id_cuenta", cuenta_bd[0] if isinstance(cuenta_bd, (tuple, list)) else None)
 
     # Métodos getters
     def get_nro_cuenta(self):
@@ -34,6 +43,16 @@ class Cuenta:
     def get_transacciones(self):
         return self.__transacciones
 
+    def set_dao(self, dao, id_cuenta: int = None):
+        """Asocia el DAO a la cuenta posteriormente si no fue inyectado en el constructor."""
+        self._dao = dao
+        if id_cuenta is not None:
+            self._id_cuenta = id_cuenta
+        elif self._dao:
+            cuenta_bd = self._dao.obtener_cuenta_por_numero(self.__nro_cuenta)
+            if cuenta_bd:
+                self._id_cuenta = getattr(cuenta_bd, "id_cuenta", cuenta_bd[0] if isinstance(cuenta_bd, (tuple, list)) else None)
+
     # Operaciones
     def depositar(self, monto: float):
         """Agrega dinero a la cuenta y retorna el saldo actualizado"""
@@ -42,8 +61,14 @@ class Cuenta:
         if monto <= 0:
             raise ValueError("El monto del depósito debe ser mayor a cero.")
 
-        self.__saldo += monto
-        self.__transacciones.append(Transaccion("deposito", monto))
+        self.__saldo += float(monto)
+        self.__transacciones.append(Transaccion(tipo_transaccion, monto))
+
+        # Persistencia en base de datos si el DAO está configurado
+        if self._dao and self._id_cuenta:
+            self._dao.actualizar_saldo_cuenta(self._id_cuenta, self.__saldo)
+            self._dao.guardar_transaccion(self._id_cuenta, tipo_transaccion, float(monto))
+
         return self.__saldo
 
     def retirar(self, monto: float):
@@ -56,10 +81,15 @@ class Cuenta:
             raise SaldoInsuficienteError(
                 "Saldo insuficiente para realizar el retiro.")
         
-        self.__saldo -= monto
+        self.__saldo -= float(monto)
         self.__transacciones.append(Transaccion("retiro", monto))
-        return self.__saldo
 
+        # Persistencia en base de datos si el DAO está configurado
+        if self._dao and self._id_cuenta:
+            self._dao.actualizar_saldo_cuenta(self._id_cuenta, self.__saldo)
+            self._dao.guardar_transaccion(self._id_cuenta, "retiro", float(monto))
+
+        return self.__saldo
 
 
     def mostrar_transacciones(self):
