@@ -7,7 +7,7 @@ class SaldoInsuficienteError(Exception):
 
 
 class Cuenta:
-    def __init__(self, nro_cuenta: str, cliente, saldo: float = 0.0):
+    def __init__(self, nro_cuenta: str, cliente, saldo: float = 0.0, dao=None, id_cuenta: int = None):
         if not nro_cuenta or not isinstance(nro_cuenta, str):
             raise ValueError(
                 "El número de cuenta debe ser una cadena no vacía.")
@@ -21,7 +21,7 @@ class Cuenta:
         self.__saldo = float(saldo)
         self.__transacciones = []
         self._dao = dao
-        self._id_cuenta = self._id_cuenta
+        self._id_cuenta = id_cuenta
 
         # Si se pasó el DAO pero no el id_cuenta, intentamos resolver el id por nro_cuenta
         if self._dao and self._id_cuenta is None:
@@ -54,7 +54,7 @@ class Cuenta:
                 self._id_cuenta = getattr(cuenta_bd, "id_cuenta", cuenta_bd[0] if isinstance(cuenta_bd, (tuple, list)) else None)
 
     # Operaciones
-    def depositar(self, monto: float):
+    def depositar(self, monto: float, tipo_transaccion: str = "deposito"):
         """Agrega dinero a la cuenta y retorna el saldo actualizado"""
         if not isinstance(monto, (int, float)):
             raise TypeError("El monto del depósito debe ser un número.")
