@@ -2,3 +2,4 @@ flet==0.28.3
 flet-desktop==0.28.3
 fpdf==1.7.2
 pytest>=9.0.3
+sqlalchemy
