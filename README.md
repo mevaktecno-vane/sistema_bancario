@@ -6,6 +6,7 @@ Proyecto integrador final de **Laboratorio I** y **Control de Versiones**
 ## Integrantes
 - **Mara Vanesa San Martín**  
 - **Daniel Ricardo González**
+- **Erika Muñoz**
 
 ---
 
