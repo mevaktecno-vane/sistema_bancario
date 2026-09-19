@@ -102,10 +102,11 @@ Requerimientos
 
 Archivo requirements.txt:
 
-flet
-fpdf
-SQLAlchemy
-pytest
+flet==0.28.3
+flet-desktop==0.28.3
+fpdf==1.7.2
+SQLAlchemy>=2.0,<3.0
+pytest>=9.0.3
 
 Control de Versiones y Trabajo Colaborativo
 
@@ -149,6 +150,7 @@ Activar entorno virtual:
 
 python -m venv venv
 venv\Scripts\activate  # En Windows
+source venv/bin/activate  # En Linux/macOS
 
 
 Instalar dependencias:
@@ -163,9 +165,15 @@ python docs/generar_diagrama_er.py
 El resultado se guarda en `docs/diagrama_entidad_relacion.mmd` y puede visualizarse con cualquier visor compatible con Mermaid.
 
 
-Ejecutar la aplicación:
+Ejecutar los tests:
 
-python main.py
+venv/bin/python -m pytest -v   # 26 tests
+
+
+Ejecutar la aplicación (se abre el navegador):
+
+venv/bin/python main.py            # entra por el login (INT-05) → http://localhost:8550
+venv/bin/python main_legado.py     # interfaz antigua (app_banco) → http://localhost:8551
 
  Evaluación Final
 
