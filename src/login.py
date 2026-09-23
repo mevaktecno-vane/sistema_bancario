@@ -1,5 +1,12 @@
 import os
+import sys
+
 import flet as ft
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from src.datos_demo import autenticar
+from src.sesion import Sesion
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOGO_PATH = os.path.join(BASE_DIR, "img", "logo_clean.png")
@@ -12,9 +19,12 @@ def render_login(page: ft.Page):
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.bgcolor = "#0a0a0f"
+    page.scroll = ft.ScrollMode.ADAPTIVE
 
     dni_input = ft.TextField(
-        hint_text="DNI",
+        label="DNI",
+        label_style=ft.TextStyle(color="#a0a0a0"),
+        hint_text="Sin puntos, ej. 40345678",
         hint_style=ft.TextStyle(color="#7a7a7a"),
         text_style=ft.TextStyle(color="#ffffff"),
         bgcolor="#121212",
@@ -26,7 +36,9 @@ def render_login(page: ft.Page):
     )
 
     clave_input = ft.TextField(
-        hint_text="CLAVE",
+        label="Clave",
+        label_style=ft.TextStyle(color="#a0a0a0"),
+        hint_text="Tu clave",
         password=True,
         can_reveal_password=True,
         hint_style=ft.TextStyle(color="#7a7a7a"),
@@ -40,14 +52,29 @@ def render_login(page: ft.Page):
     )
 
     def on_login_click(e):
-        dni = dni_input.value
-        clave = clave_input.value
+        dni = (dni_input.value or "").strip()
+        clave = (clave_input.value or "").strip()
 
         if not dni or not clave:
             mostrar_mensaje("Por favor ingresa tu DNI y Clave", es_error=True)
             return
 
-        mostrar_mensaje(f"Iniciando sesión con DNI: {dni}...", es_error=False)
+        usuario = autenticar(dni, clave)
+        if usuario is None:
+            mostrar_mensaje("DNI o clave incorrectos", es_error=True)
+            return
+
+        Sesion.iniciar(usuario)
+        mostrar_mensaje(f"Sesión iniciada como {usuario['rol']}", es_error=False)
+
+        from src.home_cliente import render_home_cliente
+        from src.home_personal import render_home_personal
+        from src.navegacion import ir_a
+
+        if usuario["rol"] == "cliente":
+            ir_a(page, render_home_cliente)
+        else:
+            ir_a(page, render_home_personal)
 
     def mostrar_mensaje(texto, es_error=False):
         page.snack_bar = ft.SnackBar(
@@ -100,11 +127,23 @@ def render_login(page: ft.Page):
                     width=280
                 ),
                 ft.Container(height=2),
+                ft.Text(
+                    "Ingresá con tu DNI para ver tus cuentas",
+                    size=13,
+                    color="#a0a0a0",
+                    text_align=ft.TextAlign.CENTER,
+                ),
                 dni_input,
                 clave_input,
                 ft.Container(height=2),
                 btn_ingresar,
-                btn_olvido
+                btn_olvido,
+                ft.Text(
+                    "Cliente: DNI 40345678    Personal: DNI 22233344",
+                    size=11,
+                    color="#7a7a7a",
+                    text_align=ft.TextAlign.CENTER,
+                ),
             ]
         )
     )
