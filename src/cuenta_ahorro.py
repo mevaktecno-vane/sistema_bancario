@@ -2,19 +2,19 @@ from src.cuenta import Cuenta
 
 
 class CuentaAhorro(Cuenta):
-    def __init__(self, nro_cuenta: str, cliente, saldo: float = 0.0, interes: float = 1.0):
-        super().__init__(nro_cuenta, cliente, saldo)
+    def __init__(self, nro_cuenta: str, cliente, saldo: float = 0.0, interes: float = 1.0, id_cuenta: int = None, dao=None):
+        super().__init__(nro_cuenta, cliente, saldo, id_cuenta=id_cuenta, dao=dao)
         if interes < 0:
             raise ValueError("La tasa de interés no puede ser negativa.")
-        self.__interes = interes
+        self.__interes = float(interes)
 
     def get_interes(self):
         return self.__interes
 
     def aplicar_interes(self):
-        """Aplica el interés al saldo actual."""
+        """Aplica el interés al saldo actual reutilizando depositar para que persista."""
         saldo_actual = self.get_saldo()
-        nuevo_saldo = saldo_actual + (saldo_actual * self.__interes / 100)
-        # Actualizamos el saldo internamente
-        self._Cuenta__saldo = nuevo_saldo  # usamos el atributo protegido de la clase base
-        return nuevo_saldo
+        monto_interes = saldo_actual * (self.__interes / 100)
+        if monto_interes > 0:
+            self.depositar(monto_interes, tipo_transaccion="interes")
+        return self.get_saldo()
