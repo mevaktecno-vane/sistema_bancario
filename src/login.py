@@ -1,16 +1,10 @@
 import os
-import base64
 import flet as ft
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOGO_PATH = os.path.join(BASE_DIR, "img", "logo_clean.png")
-if os.path.exists(LOGO_PATH):
-    with open(LOGO_PATH, "rb") as f:
-        LOGO_SRC = "data:image/png;base64," + base64.b64encode(f.read()).decode()
-else:
-    LOGO_SRC = ""
 
-def render_login(page: ft.Page, on_login_submit=None):
+def render_login(page: ft.Page):
     page.title = "Capital Bank - Login"
     page.window_width = 420
     page.window_height = 650
@@ -55,9 +49,6 @@ def render_login(page: ft.Page, on_login_submit=None):
 
         mostrar_mensaje(f"DNI: {dni}", es_error=False)
 
-        if on_login_submit:
-            on_login_submit(page, dni, clave)
-
     def mostrar_mensaje(texto, es_error=False):
         page.snack_bar = ft.SnackBar(
             ft.Text(texto),
@@ -66,7 +57,7 @@ def render_login(page: ft.Page, on_login_submit=None):
         page.snack_bar.open = True
         page.update()
 
-    btn_ingresar = ft.FilledButton(
+    btn_ingresar = ft.Button(
         content=ft.Text("INGRESAR", size=15, weight=ft.FontWeight.BOLD, color="#ffffff"),
         on_click=on_login_click,
         style=ft.ButtonStyle(
@@ -92,18 +83,16 @@ def render_login(page: ft.Page, on_login_submit=None):
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=20,
             controls=[
-                # Logo centrado dentro del ancho de la tarjeta
+                # Logo con centrado absoluto coincidente con la estructura de la tarjeta
                 ft.Container(
-                    width=280,
-                    content=ft.Row(
-                        [ft.Image(
-                            src=LOGO_SRC,
-                            width=150,
-                            height=150,
-                            fit="contain",
-                        )],
-                        alignment=ft.MainAxisAlignment.CENTER,
+                    content=ft.Image(
+                        src=LOGO_PATH,
+                        width=150,
+                        height=150,
+                        fit="contain",
                     ),
+                    alignment=ft.Alignment(0, 0),
+                    width=280
                 ),
                 ft.Container(height=5),
                 dni_input,
@@ -114,14 +103,7 @@ def render_login(page: ft.Page, on_login_submit=None):
         )
     )
 
-    page.add(
-        ft.Container(
-            expand=True,
-            bgcolor="#e0e0e0",
-            alignment=ft.Alignment(0, 0),
-            content=login_card
-        )
-    )
+    page.add(login_card)
 
 if __name__ == "__main__":
-    ft.app(target=render_login)
+    ft.run(render_login)
