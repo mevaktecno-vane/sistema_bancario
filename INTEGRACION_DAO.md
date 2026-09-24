@@ -88,7 +88,36 @@ También es válido pasar el tipo por nombre desde el catálogo:
 id_transaccion = dao.guardar_transaccion(id_cuenta, "pagoIntereses", 150.0)
 ```
 
-### Login
+### Autenticación
+
+La clase `Autenticacion` combina la validación de credenciales con la resolución del rol y de los datos asociados a la persona. Se instancia con el mismo DAO que utiliza la aplicación:
+
+```python
+from src.autenticacion import Autenticacion
+
+autenticacion = Autenticacion(dao)
+sesion = autenticacion.autenticar("30123456", "miPassword123")
+```
+
+`autenticar(dni, clave)` devuelve `None` cuando el DNI o la clave están vacíos, la persona no existe, la clave no coincide o la persona no tiene rol de cliente ni de personal. La clave se verifica contra su hash mediante `dao.validar_login_por_dni()`; no se almacena ni se compara en texto plano.
+
+Cuando la autenticación es correcta, devuelve un diccionario con esta estructura:
+
+```python
+{
+    "dni": "30123456",
+    "nombre": "Lucia",
+    "apellido": "Gomez",
+    "rol": "cliente",
+    "cuentas": [Cuenta(...)],
+}
+```
+
+- Para un cliente, `rol` es `"cliente"` y `cuentas` contiene objetos `Cuenta` reconstruidos desde la base de datos. Si no tiene cuentas, la lista es `[]`.
+- Para un empleado, `rol` es `"personal"` y `cuentas` es una lista vacía.
+- Para una persona sin rol asignado, la autenticación falla y devuelve `None`.
+
+Si solo se necesita comprobar las credenciales, sin construir la sesión, puede utilizarse directamente el DAO:
 
 ```python
 login_ok = dao.validar_login_por_dni("30123456", "miPassword123")
