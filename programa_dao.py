@@ -5,6 +5,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
+from src.autenticacion import Autenticacion
 from src.cliente import Cliente
 from src.dao import DAO
 from src.empleado import Empleado
@@ -124,9 +125,17 @@ def ejecutar_demo(restaurar: bool = True) -> None:
 
         saldo_actualizado = dao.actualizar_saldo_cuenta(id_cuenta, 1850.0)
         login_valido = dao.validar_login_por_dni(dni_cliente, "miPassword123")
+        autenticacion = Autenticacion(dao)
+        sesion_cliente = autenticacion.autenticar(dni_cliente, "miPassword123")
+        sesion_personal = autenticacion.autenticar(dni_empleado, "empleado123")
+        login_invalido = autenticacion.autenticar(dni_cliente, "claveIncorrecta")
+
         print("\nVALIDACIONES:")
         print(f"- Saldo actualizado: {saldo_actualizado}")
         print(f"- Login válido: {login_valido}")
+        print(f"- Sesión de cliente: {sesion_cliente}")
+        print(f"- Sesión de personal: {sesion_personal}")
+        print(f"- Login con clave incorrecta: {login_invalido}")
 
         dao.limpiar_base_datos()
         print("\nBase vaciada temporalmente con limpiar_base_datos().")
