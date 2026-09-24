@@ -35,7 +35,7 @@ def render_home_personal(page: ft.Page):
         padding=30,
         bgcolor=BG_TARJETA,
         border_radius=20,
-        border=ft.Border.all(1, BORDE_TARJETA),
+        border=ft.border.all(1, BORDE_TARJETA),
         shadow=ft.BoxShadow(
             blur_radius=25,
             color="#8b2fc9",

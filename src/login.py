@@ -1,3 +1,4 @@
+import base64
 import os
 import sys
 
@@ -10,6 +11,11 @@ from src.sesion import Sesion
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOGO_PATH = os.path.join(BASE_DIR, "img", "logo_clean.png")
+if os.path.exists(LOGO_PATH):
+    with open(LOGO_PATH, "rb") as f:
+        LOGO_SRC = "data:image/png;base64," + base64.b64encode(f.read()).decode()
+else:
+    LOGO_SRC = ""
 
 def render_login(page: ft.Page):
     page.title = "Capital Bank - Login"
@@ -106,7 +112,7 @@ def render_login(page: ft.Page):
         padding=30,
         bgcolor="#181820",
         border_radius=20,
-        border=ft.Border.all(1, "#2d1b4e"),
+        border=ft.border.all(1, "#2d1b4e"),
         shadow=ft.BoxShadow(
             blur_radius=25,
             color="#8b2fc9",
@@ -118,7 +124,7 @@ def render_login(page: ft.Page):
             controls=[
                 ft.Container(
                     content=ft.Image(
-                        src=LOGO_PATH,
+                        src=LOGO_SRC or LOGO_PATH,
                         width=140,
                         height=140,
                         fit="contain",

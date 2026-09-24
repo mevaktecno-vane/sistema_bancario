@@ -128,7 +128,7 @@ def render_home_cliente(page: ft.Page):
             padding=20,
             bgcolor=BG_TARJETA,
             border_radius=15,
-            border=ft.Border.all(1, BORDE_TARJETA),
+            border=ft.border.all(1, BORDE_TARJETA),
             shadow=ft.BoxShadow(
                 blur_radius=15,
                 color=BORDE_NEON,
@@ -225,7 +225,7 @@ def render_home_cliente(page: ft.Page):
         padding=ft.Padding(18, 14, 18, 14),
         bgcolor=BG_TARJETA,
         border_radius=15,
-        border=ft.Border.all(1, BORDE_TARJETA),
+        border=ft.border.all(1, BORDE_TARJETA),
         content=ft.Row(
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
@@ -285,7 +285,7 @@ def render_home_cliente(page: ft.Page):
     bottom_nav = ft.Container(
         padding=ft.Padding(8, 8, 8, 8),
         bgcolor="#121212",
-        border=ft.Border.all(1, BORDE_TARJETA),
+        border=ft.border.all(1, BORDE_TARJETA),
         border_radius=20,
         content=ft.Row(
             spacing=8,
