@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.cuenta import Cuenta
 from src.cuenta_ahorro import CuentaAhorro
-from src.navegacion import ir_a
+from src.navegacion import ir_a, crear_bottom_nav
 from src.sesion import Sesion
 
 BG_FONDO = "#0a0a0f"
@@ -263,47 +263,7 @@ def render_home_cliente(page: ft.Page):
     )
 
     # ---- Barra de navegación inferior ----
-    def _item_navegacion(icono, etiqueta, activo=False, on_click=None):
-        color = "#ffffff" if activo else GRIS_OSCURO
-        return ft.Container(
-            expand=True,
-            alignment=ft.Alignment(0, 0),
-            padding=ft.Padding(10, 8, 10, 8),
-            bgcolor=BORDE_NEON if activo else None,
-            border_radius=12,
-            on_click=on_click,
-            content=ft.Column(
-                spacing=3,
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                controls=[
-                    ft.Icon(icono, color=color, size=22),
-                    ft.Text(etiqueta, size=10, color=color),
-                ],
-            ),
-        )
-
-    bottom_nav = ft.Container(
-        padding=ft.Padding(8, 8, 8, 8),
-        bgcolor="#121212",
-        border=ft.border.all(1, BORDE_TARJETA),
-        border_radius=20,
-        content=ft.Row(
-            spacing=8,
-            controls=[
-                _item_navegacion(ft.Icons.HOME, "Inicio", activo=True),
-                _item_navegacion(
-                    ft.Icons.SYNC_ALT,
-                    "Operar",
-                    on_click=lambda e: _aviso_construccion("Módulo 'Operar' en construcción."),
-                ),
-                _item_navegacion(
-                    ft.Icons.HISTORY,
-                    "Historial",
-                    on_click=lambda e: _aviso_construccion("Módulo 'Historial' en construcción."),
-                ),
-            ],
-        ),
-    )
+    bottom_nav = crear_bottom_nav(page, "inicio")
 
     contenido_central = ft.Column(
         scroll=ft.ScrollMode.ADAPTIVE,

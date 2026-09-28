@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.cuenta import Cuenta
 from src.cuenta_ahorro import CuentaAhorro
-from src.navegacion import ir_a
+from src.navegacion import ir_a, crear_bottom_nav
 from src.sesion import Sesion
 
 BG_FONDO = "#0a0a0f"
@@ -120,20 +120,7 @@ def render_home_operaciones(page: ft.Page):
         content=ft.Column(spacing=12, controls=[dropdown_cuentas, txt_monto, ft.Row([btn_depositar, btn_retirar], spacing=12)]),
     )
 
-    bottom_nav = ft.Container(
-        padding=ft.Padding(8, 8, 8, 8),
-        bgcolor="#121212",
-        border=ft.border.all(1, BORDE_TARJETA),
-        border_radius=20,
-        content=ft.Row(
-            spacing=8,
-            controls=[
-                ft.Container(expand=True, alignment=ft.Alignment(0, 0), padding=ft.Padding(10, 8, 10, 8), content=ft.Column(spacing=3, horizontal_alignment=ft.CrossAxisAlignment.CENTER, controls=[ft.Icon(ft.Icons.HOME, color=GRIS_OSCURO, size=22), ft.Text("Inicio", size=10, color=GRIS_OSCURO)])),
-                ft.Container(expand=True, alignment=ft.Alignment(0, 0), padding=ft.Padding(10, 8, 10, 8), bgcolor=BORDE_NEON, border_radius=12, content=ft.Column(spacing=3, horizontal_alignment=ft.CrossAxisAlignment.CENTER, controls=[ft.Icon(ft.Icons.SYNC_ALT, color="#ffffff", size=22), ft.Text("Operar", size=10, color="#ffffff")] )),
-                ft.Container(expand=True, alignment=ft.Alignment(0, 0), padding=ft.Padding(10, 8, 10, 8), content=ft.Column(spacing=3, horizontal_alignment=ft.CrossAxisAlignment.CENTER, controls=[ft.Icon(ft.Icons.HISTORY, color=GRIS_OSCURO, size=22), ft.Text("Historial", size=10, color=GRIS_OSCURO)])),
-            ],
-        ),
-    )
+    bottom_nav = crear_bottom_nav(page, "operar")
 
     layout = ft.Column(expand=True, spacing=18, controls=[header, operaciones_card, bottom_nav])
     page.add(ft.Container(content=layout, padding=24, expand=True))
