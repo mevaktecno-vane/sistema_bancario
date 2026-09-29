@@ -1,192 +1,76 @@
-# Sistema Bancario  
-Proyecto integrador final de **Laboratorio I** y **Control de Versiones**  
+# 🏦 Sistema Bancario - Refactoring, Testing e Integración Continua
 
----
+Proyecto integrador para las asignaturas **Refactoring y Testing** e **Integración y Entrega Continua**.
 
-## Integrantes
-- **Mara Vanesa San Martín**  
-- **Daniel Ricardo González**
-- **Erika Muñoz**
+## 👥 Integrantes y Equipo de Desarrollo
+* **Mara Vanesa San Martín** (Tests de Dominio, Tests de Integración DAO, CI/CD)
+* **Daniel Ricardo González** 
+* **Erika Muñoz** 
+* **Cristian Testaseca**
+* **Andrés Verdún** 
+* **Romina Marín** 
+* **Valentina San Martín** 
 
----
+## 🎯 Objetivos del Proyecto
+* **Refactoring & Código Limpio:** Aplicación de principios SOLID (SRP, OCP, LSP, ISP, DIP), eliminación de Code Smells y lectura tipo periódico (*Extract Method*).
+* **Testing Automatizado:** Suite integral unitaria y de integración usando `pytest` con arquitectura Arrange-Act-Assert (AAA) y fixtures.
+* **Persistencia Desacoplada:** Manejo de DAO (Data Access Object) mediante SQLAlchemy ORM y SQLite (con soporte en memoria para tests).
+* **Integración Continua (CI/CD):** Pipeline automatizado con **GitHub Actions** que ejecuta la suite de pruebas tras cada `push` y `Pull Request`.
 
-## Descripción del Proyecto
-Este proyecto modela un **sistema bancario** utilizando los principios de la **Programación Orientada a Objetos (POO)** con Python, integrando además control de versiones con Git/GitHub, pruebas unitarias, manejo de errores, generación de reportes PDF y una **interfaz gráfica desarrollada con Flet**.
+## 🏛️ Arquitectura y Principios SOLID
+1. **Single Responsibility Principle (SRP):** Desacoplamiento total entre la Lógica de Negocio (`src/cliente.py`, `src/cuenta.py`, etc.), la Persistencia (`src/dao.py`, `src/models.py`) y la Presentación (`app_banco.py`).
+2. **Liskov Substitution Principle (LSP):** La clase `CuentaAhorro` extiende de `Cuenta` respetando estrictamente los contratos y comportamiento de la clase base.
+3. **Inversión de Dependencias & DAO:** Uso de `DAO(":memory:")` para aislar completamente las pruebas de integración sin afectar la base de datos de producción.
 
----
+## 🧪 Pruebas Automatizadas (`pytest`)
 
-## Objetivos del Trabajo
-- Aplicar **abstracción, herencia, polimorfismo y encapsulamiento** en la implementación de las clases.
-- Desarrollar un sistema funcional que permita:
-  - Registrar clientes.  
-  - Crear cuentas bancarias y tarjetas.  
-  - Realizar operaciones (depósitos, retiros, compras, pagos).  
-  - Exportar la información a un archivo PDF.  
-- Implementar una **interfaz visual amigable**.
-- Usar control de versiones (**Git y GitHub**) con trabajo colaborativo.
-- Documentar y gestionar tareas mediante **Trello**.
+El proyecto cuenta con una suite completa dividida en dos niveles:
 
----
+### 1. Tests Unitarios (Dominio de Negocio)
+* `tests/test_cliente.py`: Validaciones de formato, datos requeridos e integridad de `Cliente`.
+* `tests/test_cuenta.py`: Depósitos, retiros, control de saldo y excepción `SaldoInsuficienteError`.
+* `tests/test_transaccion.py`: Historial de operaciones y marcas de tiempo (`datetime`).
+* `tests/test_cuenta_ahorro.py`: Cálculo de tasas de interés y validación de herencia LSP.
+* `tests/test_tarjeta.py`: Compras, pagos y control de cupo con `LimiteExcedidoError`.
 
----
+### 2. Tests de Integración (Persistencia & DAO)
+* `tests/test_dao.py`: Verificación de operaciones CRUD, claves foráneas y mapeo ORM SQLite mediante base de datos en memoria (`:memory:`).
 
-## Clases Implementadas
+## 🚀 Instalación y Ejecución Local
 
-###  `Cliente`
-Representa a un cliente del banco con atributos privados (`nombre`, `apellido`, `dni`).
-
-- Validación de datos (solo letras en nombre y apellido, DNI numérico).
-- Métodos `get_` y `mostrar_datos()` para mostrar la información.
-
-###  `Cuenta`
-Maneja las operaciones bancarias principales.
-
-- Métodos: `depositar()`, `retirar()`.
-- Control de errores:
-  - `SaldoInsuficienteError`
-  - Validación de montos y tipos de datos.
-- Registra transacciones automáticamente.
-
-### `CuentaAhorro`
-Hereda de `Cuenta` e implementa polimorfismo aplicando una **tasa de interés**.
-
-###  `Tarjeta`
-Permite registrar compras y pagos de crédito, con límite configurable.
-
-### `Transaccion`
-Registra la información de cada operación
-
----
-
-## Interfaz con Flet
-
-Se desarrolló una **interfaz gráfica completa** que permite:
-- Registrar nuevos clientes.  
-- Crear cuentas y tarjetas.  
-- Realizar operaciones bancarias.
-- Visualizar movimientos.  
-- Exportar toda la información a PDF.  
-
-
----
-
-##  Generación de PDF
-Se implementó la función `generar_pdf_reporte()` con la librería **FPDF**.  
-El archivo PDF exporta datos de:
-- Cliente
-- Cuenta y saldo actual
-- Movimientos y transacciones
-
----
-
-##  Pruebas Unitarias (pytest)
-Cada clase principal cuenta con su archivo de prueba:
-- `test_cliente.py`
-- `test_cuenta.py`
-- `test_tarjeta.py`
-
-Ejemplo para ejecutar los tests:
+1. Clonar el repositorio
 ```bash
-pytest -v
-
-Manejo de Errores
-
-Se utiliza try-except en toda la app 
-
-Validación de datos inválidos al crear clientes o cuentas.
-
-Control de saldos insuficientes y límites de tarjeta.
-
-
-Requerimientos
-
-Archivo requirements.txt:
-
-flet==0.28.3
-flet-desktop==0.28.3
-fpdf==1.7.2
-SQLAlchemy>=2.0,<3.0
-pytest>=9.0.3
-
-Control de Versiones y Trabajo Colaborativo
-
-Proyecto gestionado con Git y GitHub.
-
-Cada integrante trabajó en su rama personal (Vane y Daniel).
-
-Se realizaron commits descriptivos y frecuentes.
-
-Las tareas fueron organizadas en Trello, con estados:
-
-* Pendiente
-
-* En curso
-
-* Finalizada
-
-Documentos adicionales
-
-trello_board.pdf: Export del tablero Trello usando Pretty Print.
-
-docs/gitdiagram.png: Diagrama visual del flujo de Git (ramas, merges, commits).
-
-docs/gitingest.md: Explicación del proceso de integración y control de versiones.
-
-
-
-                                    Ejecución del Proyecto
-
-Clonar el repositorio:
-
-git clone https://github.com/mevaktecno-vane/sistema_bancario.git
-
-
-Entrar al proyecto:
-
+git clone [https://github.com/mevaktecno-vane/sistema_bancario.git](https://github.com/mevaktecno-vane/sistema_bancario.git)
 cd sistema_bancario
 
-
-Activar entorno virtual:
-
+2. Crear y activar el Entorno Virtual (venv)
+PowerShell
+# En Windows (PowerShell)
 python -m venv venv
-venv\Scripts\activate  # En Windows
-source venv/bin/activate  # En Linux/macOS
+.\venv\Scripts\Activate.ps1
 
+# En Linux/macOS
+python3 -m venv venv
+source venv/bin/activate
 
-Instalar dependencias:
-
+3. Instalar dependencias
+Bash
 pip install -r requirements.txt
 
+4. Ejecutar la suite de pruebas
+Bash
+# Correr todos los tests unitarios e integrativos
+pytest
 
-Generar el diagrama entidad-relación:
+# Correr con reporte detallado de cobertura
+pytest --cov=src -v
 
-python docs/generar_diagrama_er.py
-
-El resultado se guarda en `docs/diagrama_entidad_relacion.mmd` y puede visualizarse con cualquier visor compatible con Mermaid.
-
-
-Ejecutar los tests:
-
-venv/bin/python -m pytest -v   # 26 tests
-
-
-Ejecutar la aplicación (se abre el navegador):
-
-venv/bin/python main.py            # entra por el login (INT-05) → http://localhost:8550
-venv/bin/python main_legado.py     # interfaz antigua (app_banco) → http://localhost:8551
-
- Evaluación Final
-
-El proyecto cumple con:
-
-Principios de POO.
-
-Manejo de errores.
-
-Pruebas unitarias.
-
-Interfaz gráfica funcional.
-
-Control de versiones y documentación.
-
-Trabajo colaborativo documentado.
+5. Ejecutar la Aplicación
+Bash
+# Interfaz gráfica principal (Flet)
+python main.py
+⚙️ Integración Continua (CI/CD)
+El repositorio cuenta con un workflow de GitHub Actions configurado en .github/workflows/ci.yml. En cada push a cualquier rama o apertura de Pull Request, el servidor de CI:
+1.	Configura el entorno Python aislado.
+2.	Instala las dependencias del requirements.txt.
+3.	Ejecuta la suite completa de pytest asegurando que no se introduzcan regresiones a main.
