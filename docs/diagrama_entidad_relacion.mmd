@@ -1,43 +1,67 @@
 erDiagram
-    clientes {
-        INTEGER id_cliente "PK NOT_NULL"
-        VARCHAR nombre "NOT_NULL"
-        VARCHAR apellido "NOT_NULL"
-        VARCHAR dni "UK NOT_NULL"
-        DATETIME fecha_registro "NOT_NULL"
+    persona {
+        INT id_persona PK
+        TEXT nombre "NN"
+        TEXT apellido "NN"
+        TEXT dni "NN"
+        TEXT hashedPassword "NN"
+        TEXT email "NN"
+        TEXT telefono "NN"
+        TEXT direccion "NN"
+        TIMESTAMP fecha_registro "NN"
     }
-    cuentas {
-        INTEGER id_cuenta "PK NOT_NULL"
-        VARCHAR nro_cuenta "UK NOT_NULL"
-        INTEGER id_cliente "NOT_NULL"
-        VARCHAR tipo_cuenta "NOT_NULL"
-        FLOAT saldo "NOT_NULL"
-        FLOAT tasa_interes "NOT_NULL"
-        DATETIME fecha_creacion "NOT_NULL"
+
+    cliente {
+        INT id_cliente PK
+        INT id_persona FK "NN"
+        INT categoria
+        TEXT estado "NN"
     }
-    tarjetas {
-        INTEGER id_tarjeta "PK NOT_NULL"
-        VARCHAR numero_tarjeta "UK NOT_NULL"
-        INTEGER id_cliente "NOT_NULL"
-        FLOAT limite_credito "NOT_NULL"
-        FLOAT saldo_actual "NOT_NULL"
-        DATETIME fecha_emision "NOT_NULL"
+
+    empleado {
+        INT id_empleado PK
+        INT id_persona FK "NN"
+        TEXT legajo "NN"
+        TEXT cargo "NN"
+        TEXT departamento "NN"
+        TIMESTAMP fecha_ingreso "NN"
+        REAL salario "NN"
+        TEXT sucursal "NN"
     }
-    movimientos_tarjeta {
-        INTEGER id_movimiento "PK NOT_NULL"
-        INTEGER id_tarjeta "NOT_NULL"
-        VARCHAR tipo_movimiento "NOT_NULL"
-        FLOAT monto "NOT_NULL"
-        DATETIME fecha "NOT_NULL"
+
+    cuenta {
+        INT id_cuenta PK
+        TEXT nro_cuenta "NN"
+        INT id_cliente FK "NN"
+        INT id_tipo_cuenta FK "NN"
+        REAL saldo "NN"
+        REAL tasa_interes
+        TIMESTAMP fecha_creacion "NN"
     }
-    transacciones {
-        INTEGER id_transaccion "PK NOT_NULL"
-        INTEGER id_cuenta "NOT_NULL"
-        VARCHAR tipo_transaccion "NOT_NULL"
-        FLOAT monto "NOT_NULL"
-        DATETIME fecha "NOT_NULL"
+
+    tipo_cuenta {
+        INT id_tipo_cuenta PK
+        TEXT nombre "NN"
+        TEXT descripcion
     }
-    clientes ||--o{ cuentas : "id_cliente referencia id_cliente"
-    clientes ||--o{ tarjetas : "id_cliente referencia id_cliente"
-    tarjetas ||--o{ movimientos_tarjeta : "id_tarjeta referencia id_tarjeta"
-    cuentas ||--o{ transacciones : "id_cuenta referencia id_cuenta"
+
+    transaccion {
+        INT id_transaccion PK
+        INT id_cuenta FK "NN"
+        INT id_tipo_transaccion FK "NN"
+        REAL monto "NN"
+        TIMESTAMP fecha "NN"
+    }
+
+    tipo_transaccion {
+        INT id_tipo_transaccion PK
+        TEXT nombre "NN"
+        TEXT descripcion
+    }
+
+    persona ||--|| cliente : "id_persona referencia id_persona"
+    persona ||--|| empleado : "id_persona referencia id_persona"
+    cliente ||--o{ cuenta : "id_cliente referencia id_cliente"
+    tipo_cuenta ||--o{ cuenta : "id_tipo_cuenta referencia id_tipo_cuenta"
+    cuenta ||--o{ transaccion : "id_cuenta referencia id_cuenta"
+    tipo_transaccion ||--o{ transaccion : "id_tipo_transaccion referencia id_tipo_transaccion"
