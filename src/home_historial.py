@@ -1,38 +1,39 @@
 import os
 import sys
-
 import flet as ft
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from src.cuenta import Cuenta
-from src.cuenta_ahorro import CuentaAhorro
 from src.dao_cliente import DAOCliente
-from src.navegacion import ir_a, crear_bottom_nav
+from src.navegacion import ir_a
 from src.sesion import Sesion
 
 # Temporal hasta BE-10/11 de Daniel (ver src/dao_cliente.py).
 _dao = DAOCliente("sistema_bancario.db")
 
-BG_FONDO = "#0a0a0f"
-BG_TARJETA = "#181820"
-BORDE_NEON = "#8b2fc9"
-NEON_CLARO = "#a855f7"
-BORDE_TARJETA = "#2d1b4e"
-GRIS = "#a0a0a0"
-GRIS_OSCURO = "#7a7a7a"
+# Paleta de colores
+BG_FONDO = "#07040d"
+BG_TARJETA = "#0f081d"
+NEON_PURPLE = "#b026ff"
+NEON_BORDER = "#8c1eff"
+NEON_BG_BTN = "#9d00ff"
+GREEN_NEON = "#4ade80"
+RED_NEON = "#f87171"
+TEXT_MUTED = "#a0a0a0"
 
 
-def _formatear_monto(monto):
-    valor = f"{monto:,.2f}"
-    return "$ " + valor.replace(".", "X").replace(",", ".").replace("X", ",")
+def _formatear_monto_mov(monto):
+    signo = "+ " if monto > 0 else "- "
+    val = f"{abs(monto):,.2f}".replace(".", "X").replace(",", ".").replace("X", ",")
+    return f"{signo}{val}"
 
 
 def render_home_historial(page: ft.Page):
     page.title = "Capital Bank - Historial"
-    page.window_width = 420
-    page.window_height = 680
-    page.window_resizable = False
+    # Aumentado el ancho a 520
+    page.window_width = 520
+    page.window_height = 700
+    page.window_resizable = True
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.bgcolor = BG_FONDO
 
@@ -44,57 +45,248 @@ def render_home_historial(page: ft.Page):
     nombre = usuario.get("nombre", "Cliente")
     cuentas = usuario.get("cuentas", [])
 
-    historial_column = ft.Column(spacing=6)
+    # Transacciones reales de la BD, adaptadas al formato de esta vista.
+    with _dao.connect() as _s:
+        from sqlalchemy import select
+        from src.models import TipoCuentaModel
+        _tipos = {r.id_tipo_cuenta: r.nombre for r in
+                  _s.scalars(select(TipoCuentaModel)).all()}
 
-    movimientos = _dao.historial_cuentas(cuentas)
-    if not movimientos:
-        historial_column.controls.append(
-            ft.Text("Sin movimientos registrados", color=GRIS_OSCURO)
-        )
-    for fecha, nro_cuenta, tx in movimientos:
-        color = ft.Colors.GREEN_700 if tx.get_tipo() == "deposito" else None
-        historial_column.controls.append(
-            ft.Text(f"{fecha.strftime('%Y-%m-%d %H:%M')} | {nro_cuenta} | "
-                    f"{tx.get_tipo()} | {_formatear_monto(tx.get_monto())}",
-                    color=color)
-        )
+    def _etiqueta_cuenta(cuenta):
+        nombre_tipo = _tipos.get(cuenta.get_id_tipo_cuenta(), "")
+        if "ahorro" in nombre_tipo.lower():
+            return "Caja de ahorro"
+        return nombre_tipo or "Cuenta"
+
+    _nombres = {c.get_id_cuenta(): _etiqueta_cuenta(c) for c in cuentas}
+    historial_lista = [
+        {
+            "fecha": fecha.strftime("%d/%m/%Y"),
+            "operacion": "Depositar" if tx.get_tipo() == "deposito"
+                         else ("Retiro" if tx.get_tipo() == "retiro" else tx.get_tipo()),
+            "cuenta": _nombres.get(tx.get_id_cuenta(), ""),
+            "monto": tx.get_monto() if tx.get_tipo() == "deposito" else -tx.get_monto(),
+        }
+        for fecha, _, tx in _dao.historial_cuentas(cuentas)
+    ]
+
+    filtro_activo = ["Todas"]
+    col_filas = ft.Column(spacing=14)
+
+    def _cerrar_sesion(e):
+        Sesion.cerrar()
+        from src.login import render_login
+        ir_a(page, render_login)
+
+    def _actualizar_tabla():
+        col_filas.controls.clear()
+        filtrados = [
+            m for m in historial_lista
+            if filtro_activo[0] == "Todas" or m.get("cuenta", "").lower() == filtro_activo[0].lower()
+        ]
+
+        if not filtrados:
+            col_filas.controls.append(
+                ft.Container(
+                    padding=20,
+                    alignment=ft.Alignment(0, 0),
+                    content=ft.Text("Sin movimientos registrados", color=TEXT_MUTED, size=13),
+                )
+            )
+        else:
+            for item in filtrados:
+                es_positivo = item.get("monto", 0) > 0
+                color_monto = GREEN_NEON if es_positivo else RED_NEON
+
+                col_filas.controls.append(
+                    ft.Row(
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        controls=[
+                            ft.Text(item.get("fecha", ""), size=12, color="#ffffff", expand=2),
+                            ft.Text(item.get("operacion", ""), size=12, color="#ffffff", expand=2),
+                            ft.Text(item.get("cuenta", ""), size=12, color="#ffffff", expand=3),
+                            ft.Text(
+                                _formatear_monto_mov(item.get("monto", 0)),
+                                size=12,
+                                weight=ft.FontWeight.W_500,
+                                color=color_monto,
+                                text_align=ft.TextAlign.RIGHT,
+                                expand=3,
+                            ),
+                        ],
+                    )
+                )
+        page.update()
+
+    btn_todas = ft.Container(
+        expand=True,
+        padding=ft.Padding(0, 8, 0, 8),
+        bgcolor=NEON_BG_BTN,
+        border_radius=20,
+        alignment=ft.Alignment(0, 0),
+        content=ft.Text("Todas", color="#ffffff", weight=ft.FontWeight.W_500, size=12),
+    )
+    btn_corriente = ft.Container(
+        expand=True,
+        padding=ft.Padding(0, 8, 0, 8),
+        border=ft.border.all(1, NEON_BORDER),
+        border_radius=20,
+        alignment=ft.Alignment(0, 0),
+        content=ft.Text("Corriente", color="#ffffff", size=12),
+    )
+    btn_caja = ft.Container(
+        expand=True,
+        padding=ft.Padding(0, 8, 0, 8),
+        border=ft.border.all(1, NEON_BORDER),
+        border_radius=20,
+        alignment=ft.Alignment(0, 0),
+        content=ft.Text("Caja de ahorro", color="#ffffff", size=12),
+    )
+
+    def _aplicar_filtro(nombre_filtro, btn_sel):
+        filtro_activo[0] = nombre_filtro
+        for b in [btn_todas, btn_corriente, btn_caja]:
+            b.bgcolor = None
+            b.border = ft.border.all(1, NEON_BORDER)
+
+        btn_sel.bgcolor = NEON_BG_BTN
+        btn_sel.border = None
+        _actualizar_tabla()
+
+    btn_todas.on_click = lambda e: _aplicar_filtro("Todas", btn_todas)
+    btn_corriente.on_click = lambda e: _aplicar_filtro("Corriente", btn_corriente)
+    btn_caja.on_click = lambda e: _aplicar_filtro("Caja de ahorro", btn_caja)
 
     header = ft.Row(
-        vertical_alignment=ft.CrossAxisAlignment.START,
         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        vertical_alignment=ft.CrossAxisAlignment.CENTER,
         controls=[
-            ft.Column(
-                spacing=3,
+            ft.Row(
+                spacing=12,
                 controls=[
-                    ft.Text(f"Hola, {nombre} 👋", size=22, weight=ft.FontWeight.BOLD, color="#ffffff"),
-                    ft.Text("Historial de transacciones recientes", size=13, color=GRIS),
+                    ft.Container(
+                        width=46,
+                        height=46,
+                        border_radius=14,
+                        border=ft.border.all(1.5, NEON_PURPLE),
+                        alignment=ft.Alignment(0, 0),
+                        content=ft.Column(
+                            alignment=ft.MainAxisAlignment.CENTER,
+                            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                            spacing=0,
+                            controls=[
+                                ft.Icon(ft.Icons.ACCOUNT_BALANCE, size=18, color=NEON_PURPLE),
+                                ft.Text("C|B", color=NEON_PURPLE, weight=ft.FontWeight.BOLD, size=9),
+                            ],
+                        ),
+                    ),
+                    ft.Text(f"Hola, {nombre}", size=24, weight=ft.FontWeight.BOLD, color="#ffffff"),
                 ],
             ),
-            ft.Container(width=40, height=40),
+            ft.Container(
+                padding=ft.Padding(12, 6, 12, 6),
+                border=ft.border.all(1, NEON_BORDER),
+                border_radius=20,
+                on_click=_cerrar_sesion,
+                content=ft.Row(
+                    spacing=6,
+                    controls=[
+                        ft.Icon(ft.Icons.LOGOUT, size=14, color=NEON_PURPLE),
+                        ft.Text("Cerrar sesión", size=11, color=NEON_PURPLE),
+                    ],
+                ),
+            ),
         ],
     )
 
-    historial_card = ft.Container(
-        padding=ft.Padding(18, 14, 18, 14),
+    card_historial = ft.Container(
+        padding=18,
         bgcolor=BG_TARJETA,
-        border_radius=15,
-        border=ft.border.all(1, BORDE_TARJETA),
-        content=ft.Column(spacing=10, controls=[historial_column]),
+        border_radius=20,
+        border=ft.border.all(1.5, NEON_BORDER),
+        shadow=ft.BoxShadow(blur_radius=12, color=NEON_BORDER, offset=ft.Offset(0, 0)),
+        content=ft.Column(
+            spacing=12,
+            controls=[
+                ft.Row(
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                    controls=[
+                        ft.Text("FECHA", size=11, color=NEON_PURPLE, expand=2),
+                        ft.Text("OPERACIÓN", size=11, color=NEON_PURPLE, expand=2),
+                        ft.Text("CUENTA", size=11, color=NEON_PURPLE, expand=3),
+                        ft.Text("MONTO", size=11, color=NEON_PURPLE, text_align=ft.TextAlign.RIGHT, expand=3),
+                    ],
+                ),
+                ft.Divider(height=1, color="#261b3e"),
+                ft.Container(
+                    height=250,
+                    content=ft.Column(scroll=ft.ScrollMode.ADAPTIVE, controls=[col_filas]),
+                ),
+            ],
+        ),
     )
 
-    bottom_nav = crear_bottom_nav(page, "historial")
+    def _ir_home(e):
+        from src.home_cliente import render_home_cliente
+        ir_a(page, render_home_cliente)
 
-    layout = ft.Column(expand=True, spacing=18, controls=[header, historial_card, bottom_nav])
-    page.add(ft.Container(content=layout, padding=24, expand=True))
+    def _ir_operar(e):
+        from src.home_operaciones import render_home_operaciones
+        ir_a(page, render_home_operaciones)
 
+    def _nav_btn(icon, label, active=False, on_click=None):
+        return ft.Container(
+            expand=True,
+            padding=ft.Padding(0, 8, 0, 8),
+            bgcolor=NEON_BG_BTN if active else None,
+            border_radius=25,
+            on_click=on_click,
+            content=ft.Column(
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=2,
+                controls=[
+                    ft.Icon(icon, color="#ffffff" if active else TEXT_MUTED, size=20),
+                    ft.Text(label, color="#ffffff" if active else TEXT_MUTED, size=10),
+                ],
+            ),
+        )
 
-if __name__ == "__main__":
-    from src.sesion import Sesion
-    Sesion.iniciar({
-        "dni": "40345678",
-        "rol": "cliente",
-        "nombre": "María",
-        "apellido": "Fernández",
-        "cuentas": [],
-    })
-    ft.run(render_home_historial)
+    bottom_nav = ft.Container(
+        padding=4,
+        border=ft.border.all(1.5, NEON_BORDER),
+        border_radius=30,
+        content=ft.Row(
+            controls=[
+                _nav_btn(ft.Icons.HOME_OUTLINED, "Inicio", on_click=_ir_home),
+                _nav_btn(ft.Icons.SWAP_HORIZ, "Operar", on_click=_ir_operar),
+                _nav_btn(ft.Icons.SCHEDULE, "Historial", active=True),
+            ]
+        ),
+    )
+
+    layout = ft.Column(
+        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        expand=True,
+        controls=[
+            header,
+            ft.Column(
+                spacing=14,
+                controls=[
+                    ft.Column(
+                        spacing=0,
+                        controls=[
+                            ft.Text("HISTORIAL", size=12, color=NEON_PURPLE, weight=ft.FontWeight.W_600),
+                            ft.Text("Movimientos", size=24, weight=ft.FontWeight.BOLD, color="#ffffff"),
+                        ],
+                    ),
+                    ft.Row(controls=[btn_todas, btn_corriente, btn_caja], spacing=8),
+                    card_historial,
+                ],
+            ),
+            bottom_nav,
+        ],
+    )
+
+    page.add(ft.Container(content=layout, padding=16, expand=True))
+    _actualizar_tabla()
