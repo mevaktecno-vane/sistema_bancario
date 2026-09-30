@@ -5,7 +5,7 @@ import flet as ft
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from src.dao_cliente import DAOCliente
-from src.navegacion import ir_a
+from src.navegacion import crear_bottom_nav, ir_a
 from src.sesion import Sesion
 
 # Temporal hasta BE-10/11 de Daniel (ver src/dao_cliente.py).
@@ -226,44 +226,8 @@ def render_home_historial(page: ft.Page):
         ),
     )
 
-    def _ir_home(e):
-        from src.home_cliente import render_home_cliente
-        ir_a(page, render_home_cliente)
-
-    def _ir_operar(e):
-        from src.home_operaciones import render_home_operaciones
-        ir_a(page, render_home_operaciones)
-
-    def _nav_btn(icon, label, active=False, on_click=None):
-        return ft.Container(
-            expand=True,
-            padding=ft.Padding(0, 8, 0, 8),
-            bgcolor=NEON_BG_BTN if active else None,
-            border_radius=25,
-            on_click=on_click,
-            content=ft.Column(
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                alignment=ft.MainAxisAlignment.CENTER,
-                spacing=2,
-                controls=[
-                    ft.Icon(icon, color="#ffffff" if active else TEXT_MUTED, size=20),
-                    ft.Text(label, color="#ffffff" if active else TEXT_MUTED, size=10),
-                ],
-            ),
-        )
-
-    bottom_nav = ft.Container(
-        padding=4,
-        border=ft.border.all(1.5, NEON_BORDER),
-        border_radius=30,
-        content=ft.Row(
-            controls=[
-                _nav_btn(ft.Icons.HOME_OUTLINED, "Inicio", on_click=_ir_home),
-                _nav_btn(ft.Icons.SWAP_HORIZ, "Operar", on_click=_ir_operar),
-                _nav_btn(ft.Icons.SCHEDULE, "Historial", active=True),
-            ]
-        ),
-    )
+    # --- Navegación Inferior (compartida, estilo de Zafiro) ---
+    bottom_nav = crear_bottom_nav(page, "historial")
 
     layout = ft.Column(
         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
