@@ -6,8 +6,12 @@ import flet as ft
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.datos_demo import autenticar
+from src.autenticacion import Autenticacion
+from src.dao import DAO
 from src.sesion import Sesion
+
+_dao = DAO("sistema_bancario.db")
+_autenticacion = Autenticacion(_dao)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOGO_PATH = os.path.join(BASE_DIR, "img", "logo_clean.png")
@@ -65,7 +69,7 @@ def render_login(page: ft.Page):
             mostrar_mensaje("Por favor ingresa tu DNI y Clave", es_error=True)
             return
 
-        usuario = autenticar(dni, clave)
+        usuario = _autenticacion.autenticar(dni, clave)
         if usuario is None:
             mostrar_mensaje("DNI o clave incorrectos", es_error=True)
             return
@@ -145,7 +149,7 @@ def render_login(page: ft.Page):
                 btn_ingresar,
                 btn_olvido,
                 ft.Text(
-                    "Cliente: DNI 40345678    Personal: DNI 22233344",
+                    "Personal: DNI 22233344 / clave admin123",
                     size=11,
                     color="#7a7a7a",
                     text_align=ft.TextAlign.CENTER,

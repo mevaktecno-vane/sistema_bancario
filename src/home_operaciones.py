@@ -7,8 +7,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.cuenta import Cuenta
 from src.cuenta_ahorro import CuentaAhorro
+from src.dao_cliente import DAOCliente
 from src.navegacion import ir_a, crear_bottom_nav
 from src.sesion import Sesion
+
+# Temporal hasta BE-10/11 de Daniel (ver src/dao_cliente.py).
+_dao = DAOCliente("sistema_bancario.db")
 
 BG_FONDO = "#0a0a0f"
 BG_TARJETA = "#181820"
@@ -52,12 +56,28 @@ def render_home_operaciones(page: ft.Page):
         page.snack_bar.open = True
         page.update()
 
-    # Controles de operaciones
+    # Controles de operaciones (key = id_cuenta para ubicar la cuenta elegida)
     dropdown_cuentas = ft.Dropdown(
         width=340,
-        options=[ft.dropdown.Option(f"{_nombre_tipo(c)} - {c.get_nro_cuenta()}") for c in cuentas] if cuentas else [],
+        options=[
+            ft.dropdown.Option(
+                key=str(c.get_id_cuenta()),
+                text=f"{_nombre_tipo(c)} - {c.get_nro_cuenta()}",
+            )
+            for c in cuentas
+        ] if cuentas else [],
         hint_text="Seleccione una cuenta",
     )
+
+    def _cuenta_elegida():
+        if not cuentas:
+            return None
+        if dropdown_cuentas.value is None:
+            return cuentas[0]
+        for c in cuentas:
+            if str(c.get_id_cuenta()) == dropdown_cuentas.value:
+                return c
+        return None
 
     txt_monto = ft.TextField(label="Monto", width=340, keyboard_type=ft.KeyboardType.NUMBER)
     btn_depositar = ft.FilledButton("Depositar", width=160)
@@ -70,26 +90,28 @@ def render_home_operaciones(page: ft.Page):
 
     def _operar_deposito(e):
         try:
-            if not cuentas:
+            cuenta = _cuenta_elegida()
+            if cuenta is None:
                 _mostrar_notificacion("No hay cuentas disponibles.", ft.Colors.RED_700)
                 return
-            idx = dropdown_cuentas.options.index(dropdown_cuentas.value) if dropdown_cuentas.value else 0
-            cuenta = cuentas[idx]
             monto = float(txt_monto.value)
-            cuenta.depositar(monto)
+            _dao.depositar(cuenta, monto)
+            txt_monto.value = ""
+            page.update()
             _mostrar_notificacion(f"Depósito de {_formatear_monto(monto)} realizado.")
         except Exception as ex:
             _mostrar_notificacion(f"Error: {ex}", ft.Colors.RED_700)
 
     def _operar_retiro(e):
         try:
-            if not cuentas:
+            cuenta = _cuenta_elegida()
+            if cuenta is None:
                 _mostrar_notificacion("No hay cuentas disponibles.", ft.Colors.RED_700)
                 return
-            idx = dropdown_cuentas.options.index(dropdown_cuentas.value) if dropdown_cuentas.value else 0
-            cuenta = cuentas[idx]
             monto = float(txt_monto.value)
-            cuenta.retirar(monto)
+            _dao.retirar(cuenta, monto)
+            txt_monto.value = ""
+            page.update()
             _mostrar_notificacion(f"Retiro de {_formatear_monto(monto)} realizado.")
         except Exception as ex:
             _mostrar_notificacion(f"Error: {ex}", ft.Colors.RED_700)

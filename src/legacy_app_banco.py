@@ -5,7 +5,7 @@ from src.cuenta import Cuenta, SaldoInsuficienteError
 from src.tarjeta import Tarjeta
 from src.transaccion import Transaccion
 from src.cuenta_ahorro import CuentaAhorro
-from src.exportar_datos_a_pdf import generar_pdf_reporte
+from src.legacy_exportar_pdf import generar_pdf_reporte
 from src.dao import DAO
 
 class SaldoInsuficienteError(Exception): pass

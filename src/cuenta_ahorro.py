@@ -2,8 +2,8 @@ from src.cuenta import Cuenta
 
 
 class CuentaAhorro(Cuenta):
-    def __init__(self, nro_cuenta: str, cliente, saldo: float = 0.0, interes: float = 1.0, id_cuenta: int = None, dao=None):
-        super().__init__(nro_cuenta, cliente, saldo, id_cuenta=id_cuenta, dao=dao)
+    def __init__(self, nro_cuenta: str, cliente, saldo: float = 0.0, interes: float = 1.0, id_cuenta: int = None):
+        super().__init__(nro_cuenta, cliente, saldo, id_cuenta=id_cuenta)
         if interes < 0:
             raise ValueError("La tasa de interés no puede ser negativa.")
         self.__interes = float(interes)
@@ -16,5 +16,5 @@ class CuentaAhorro(Cuenta):
         saldo_actual = self.get_saldo()
         monto_interes = saldo_actual * (self.__interes / 100)
         if monto_interes > 0:
-            self.depositar(monto_interes, tipo_transaccion="interes")
+            self.depositar(monto_interes, tipo="interes")
         return self.get_saldo()

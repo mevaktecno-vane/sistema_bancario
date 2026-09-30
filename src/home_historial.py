@@ -7,8 +7,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.cuenta import Cuenta
 from src.cuenta_ahorro import CuentaAhorro
+from src.dao_cliente import DAOCliente
 from src.navegacion import ir_a, crear_bottom_nav
 from src.sesion import Sesion
+
+# Temporal hasta BE-10/11 de Daniel (ver src/dao_cliente.py).
+_dao = DAOCliente("sistema_bancario.db")
 
 BG_FONDO = "#0a0a0f"
 BG_TARJETA = "#181820"
@@ -33,17 +37,27 @@ def render_home_historial(page: ft.Page):
     page.bgcolor = BG_FONDO
 
     usuario = Sesion.actual()
+    if not usuario:
+        from src.login import render_login
+        ir_a(page, render_login)
+        return
     nombre = usuario.get("nombre", "Cliente")
     cuentas = usuario.get("cuentas", [])
 
     historial_column = ft.Column(spacing=6)
 
-    # Mock: en la app real se deben obtener transacciones de los objetos Cuenta
-    historial_column.controls.extend([
-        ft.Text("2026-01-01 | Depósito | $100.00"),
-        ft.Text("2026-01-02 | Retiro   | $50.00", color=ft.Colors.RED_700),
-        ft.Text("2026-01-10 | Interés  | $2.50", color=ft.Colors.GREEN_700),
-    ])
+    movimientos = _dao.historial_cuentas(cuentas)
+    if not movimientos:
+        historial_column.controls.append(
+            ft.Text("Sin movimientos registrados", color=GRIS_OSCURO)
+        )
+    for fecha, nro_cuenta, tx in movimientos:
+        color = ft.Colors.GREEN_700 if tx.get_tipo() == "deposito" else None
+        historial_column.controls.append(
+            ft.Text(f"{fecha.strftime('%Y-%m-%d %H:%M')} | {nro_cuenta} | "
+                    f"{tx.get_tipo()} | {_formatear_monto(tx.get_monto())}",
+                    color=color)
+        )
 
     header = ft.Row(
         vertical_alignment=ft.CrossAxisAlignment.START,
