@@ -5,7 +5,7 @@ import flet as ft
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from src.dao_cliente import DAOCliente
-from src.navegacion import crear_bottom_nav, ir_a
+from src.navegacion import crear_bottom_nav, ir_a, nombre_cuenta_para_header
 from src.sesion import Sesion
 
 # Temporal hasta BE-10/11 de Daniel (ver src/dao_cliente.py).
@@ -118,6 +118,13 @@ def render_home_historial(page: ft.Page):
                 )
         page.update()
 
+    lbl_titulo_cuenta = ft.Text(
+        nombre_cuenta_para_header("Mercado Pago"),
+        size=12,
+        color=NEON_PURPLE,
+        weight=ft.FontWeight.W_600,
+    )
+
     btn_todas = ft.Container(
         expand=True,
         padding=ft.Padding(0, 8, 0, 8),
@@ -145,6 +152,7 @@ def render_home_historial(page: ft.Page):
 
     def _aplicar_filtro(nombre_filtro, btn_sel):
         filtro_activo[0] = nombre_filtro
+        lbl_titulo_cuenta.value = nombre_cuenta_para_header(nombre_filtro)
         for b in [btn_todas, btn_corriente, btn_caja]:
             b.bgcolor = None
             b.border = ft.border.all(1, NEON_BORDER)
@@ -180,7 +188,13 @@ def render_home_historial(page: ft.Page):
                             ],
                         ),
                     ),
-                    ft.Text(f"Hola, {nombre}", size=24, weight=ft.FontWeight.BOLD, color="#ffffff"),
+                    ft.Column(
+                        spacing=2,
+                        controls=[
+                            lbl_titulo_cuenta,
+                            ft.Text(f"Hola, {nombre}", size=24, weight=ft.FontWeight.BOLD, color="#ffffff"),
+                        ],
+                    ),
                 ],
             ),
             ft.Container(

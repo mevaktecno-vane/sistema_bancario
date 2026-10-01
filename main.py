@@ -8,4 +8,4 @@ def main(page: ft.Page):
 
 
 if __name__ == "__main__":
-    ft.app(target=main, view=ft.WEB_BROWSER, port=8550)
+    ft.app(target=main, view=ft.WEB_BROWSER)

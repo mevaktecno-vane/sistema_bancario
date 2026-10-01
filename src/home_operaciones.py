@@ -7,7 +7,7 @@ import flet as ft
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.dao_cliente import DAOCliente
-from src.navegacion import crear_bottom_nav
+from src.navegacion import crear_bottom_nav, nombre_cuenta_para_header
 from src.sesion import Sesion
 
 # Temporal hasta BE-10/11 de Daniel (ver src/dao_cliente.py).
@@ -37,6 +37,7 @@ def render_home_operaciones(page: ft.Page):
 
     usuario = Sesion.actual()
     cuentas = usuario.get("cuentas", []) if usuario else []
+    nombre_usuario = usuario.get("nombre", "Cliente") if usuario else "Cliente"
 
     # Nombres de tipo desde la BD para mapear el toggle a la cuenta real.
     with _dao.connect() as _s:
@@ -90,8 +91,16 @@ def render_home_operaciones(page: ft.Page):
         ),
     )
 
+    lbl_titulo_cuenta = ft.Text(
+        nombre_cuenta_para_header(cuenta_seleccionada[0]),
+        size=12,
+        color=NEON_PURPLE,
+        weight=ft.FontWeight.W_600,
+    )
+
     def _seleccionar_cuenta(tipo, btn_sel):
         cuenta_seleccionada[0] = tipo
+        lbl_titulo_cuenta.value = nombre_cuenta_para_header(tipo)
         btn_cuenta_corriente.bgcolor = None
         btn_cuenta_corriente.border = ft.border.all(1, NEON_BORDER)
         btn_cuenta_caja.bgcolor = None
@@ -235,6 +244,8 @@ def render_home_operaciones(page: ft.Page):
                 ft.Column(
                     spacing=2,
                     controls=[
+                        lbl_titulo_cuenta,
+                        ft.Text(f"Hola, {nombre_usuario}", size=22, weight=ft.FontWeight.BOLD, color="#ffffff"),
                         ft.Text("OPERAR", size=14, color="#ffffff", weight=ft.FontWeight.BOLD),
                         ft.Text("Depositar o retirar", size=13, color=NEON_PURPLE),
                     ],
