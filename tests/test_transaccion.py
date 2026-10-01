@@ -46,10 +46,23 @@ def test_representacion_cadena_formateada():
 # ==============================================================================
 
 def test_lanza_excepcion_tipo_transaccion_invalido():
-    """Valida que solo se permitan tipos 'deposito' o 'retiro'."""
-    with pytest.raises(ValueError, match="Tipo de transacción inválido"):
-        Transaccion(tipo="transferencia", monto=100.0)
-
+    """Valida que el DAO rechace tipos de transacción no registrados en la BD."""
+    from src.dao import DAO
+    from src.cliente import Cliente
+    from sqlalchemy.exc import IntegrityError
+    
+    dao = DAO(":memory:")
+    
+    # 1. Crear datos mínimos para que exista la cuenta (evitar FK constraint error de id_cuenta)
+    cliente = Cliente("Test", "User", "11111111")
+    id_cliente = dao.guardar_cliente(cliente)
+    id_tipo_cuenta = dao.guardar_tipo_cuenta("Corriente", "Cuenta Corriente")
+    id_cuenta = dao.guardar_cuenta("CC-TEST", id_cliente, id_tipo_cuenta, saldo=1000.0)
+    
+    # 2. Intentar guardar una transacción con un id_tipo_transaccion inexistente
+    with pytest.raises((ValueError, IntegrityError)):
+        dao.guardar_transaccion(id_cuenta, id_tipo_transaccion=9999, monto=100.0)
+    
 
 def test_lanza_excepcion_monto_no_numerico():
     """Valida que el monto deba ser de tipo entero o flotante."""
