@@ -1,14 +1,14 @@
-from sqlalchemy import update
+from sqlalchemy import select, update
 
 from src.cliente import Cliente
-from src.models import ClienteModel
+from src.models import PersonaModel, TipoCuentaModel
 
 
 # =========================================================
 # BE-07 - ALTA DE CLIENTE
 # =========================================================
 
-def alta_cliente(dao, nombre, apellido, dni):
+def alta_cliente(dao, nombre, apellido, dni, password=None):
     """
     Crea un nuevo cliente y lo guarda en la base de datos.
     """
@@ -19,9 +19,13 @@ def alta_cliente(dao, nombre, apellido, dni):
     if cliente_existente is not None:
         raise ValueError("Ya existe un cliente con ese DNI.")
 
-    # Crear el cliente.
-    # La clase Cliente realiza las validaciones básicas.
-    nuevo_cliente = Cliente(nombre, apellido, dni)
+    # Crear el cliente
+    nuevo_cliente = Cliente(
+        nombre,
+        apellido,
+        dni,
+        password=password
+    )
 
     # Guardar el cliente en la base de datos
     id_cliente = dao.guardar_cliente(nuevo_cliente)
@@ -42,9 +46,10 @@ def alta_cuenta(
 ):
     """
     Crea una cuenta para un cliente existente.
+    Cada cliente puede tener una sola cuenta de cada tipo.
     """
 
-    # Validar saldo
+    # Validar saldo inicial
     try:
         saldo_inicial = float(saldo_inicial)
     except (ValueError, TypeError):
@@ -53,13 +58,23 @@ def alta_cuenta(
     if saldo_inicial < 0:
         raise ValueError("El saldo inicial no puede ser negativo.")
 
-    # Normalizar el tipo de cuenta
-    tipo_cuenta = tipo_cuenta.strip().lower()
+    # Validar tipo de cuenta
+    if not tipo_cuenta:
+        raise ValueError("Debe indicar un tipo de cuenta.")
 
-    if tipo_cuenta not in ("ahorro", "corriente"):
+    tipo_normalizado = tipo_cuenta.strip().lower()
+
+    tipos_validos = {
+        "ahorro": "Ahorro",
+        "corriente": "Corriente"
+    }
+
+    if tipo_normalizado not in tipos_validos:
         raise ValueError(
-            "El tipo de cuenta debe ser 'ahorro' o 'corriente'."
+            "El tipo de cuenta debe ser 'Ahorro' o 'Corriente'."
         )
+
+    nombre_tipo = tipos_validos[tipo_normalizado]
 
     # Buscar cliente por DNI
     cliente = dao.obtener_cliente_por_dni(dni)
@@ -67,32 +82,53 @@ def alta_cuenta(
     if cliente is None:
         raise ValueError("No existe un cliente con ese DNI.")
 
-    # La posición 0 de la tupla contiene el id_cliente
+    # La posición 0 contiene id_cliente
     id_cliente = cliente[0]
 
-    # Obtener las cuentas actuales del cliente
-    cuentas = dao.obtener_cuentas_por_cliente(id_cliente)
+    # Resolver id_tipo_cuenta
+    try:
+        id_tipo_cuenta = dao.guardar_tipo_cuenta(nombre_tipo)
 
-    # Comprobar que no tenga otra cuenta del mismo tipo
-    for cuenta in cuentas:
-        tipo_existente = cuenta[3].strip().lower()
-
-        if tipo_existente == tipo_cuenta:
-            raise ValueError(
-                f"El cliente ya posee una cuenta de tipo {tipo_cuenta}."
+    except ValueError:
+        with dao.connect() as session:
+            tipo_existente = session.scalar(
+                select(TipoCuentaModel).where(
+                    TipoCuentaModel.nombre == nombre_tipo
+                )
             )
 
-    # Comprobar que el número de cuenta no esté usado
+            if tipo_existente is None:
+                raise ValueError(
+                    "No se pudo obtener el tipo de cuenta."
+                )
+
+            id_tipo_cuenta = tipo_existente.id_tipo_cuenta
+
+    # Comprobar que el cliente no tenga ese tipo de cuenta
+    cuentas = dao.obtener_cuentas_por_cliente(id_cliente)
+
+    for cuenta in cuentas:
+        # cuenta[3] contiene id_tipo_cuenta
+        tipo_existente = cuenta[3]
+
+        if tipo_existente == id_tipo_cuenta:
+            raise ValueError(
+                f"El cliente ya posee una cuenta de tipo {nombre_tipo}."
+            )
+
+    # Comprobar que el número de cuenta no esté utilizado
     cuenta_existente = dao.obtener_cuenta_por_numero(nro_cuenta)
 
     if cuenta_existente is not None:
-        raise ValueError("Ya existe una cuenta con ese número.")
+        raise ValueError(
+            "Ya existe una cuenta con ese número."
+        )
 
-    # Guardar la cuenta
+    # Guardar cuenta
     id_cuenta = dao.guardar_cuenta(
         nro_cuenta=nro_cuenta,
         id_cliente=id_cliente,
-        tipo_cuenta=tipo_cuenta,
+        id_tipo_cuenta=id_tipo_cuenta,
         saldo=saldo_inicial
     )
 
@@ -108,46 +144,60 @@ def editar_cliente(
     dni_actual,
     nuevo_nombre,
     nuevo_apellido,
-    nuevo_dni
+    nuevo_dni,
+    password=None
 ):
     """
-    Modifica los datos de un cliente existente.
+    Modifica los datos personales de un cliente existente.
     """
 
-    # Buscar el cliente
+    # Buscar cliente actual
     cliente_actual = dao.obtener_cliente_por_dni(dni_actual)
 
     if cliente_actual is None:
-        raise ValueError("No existe un cliente con ese DNI.")
+        raise ValueError(
+            "No existe un cliente con ese DNI."
+        )
 
-    # Crear temporalmente un Cliente para validar los datos nuevos
+    # Crear un Cliente temporal para validar los datos nuevos
     datos_nuevos = Cliente(
         nuevo_nombre,
         nuevo_apellido,
-        nuevo_dni
+        nuevo_dni,
+        password=password
     )
 
     # Si cambia el DNI, comprobar que no esté ocupado
-    if nuevo_dni != dni_actual:
-        cliente_con_nuevo_dni = dao.obtener_cliente_por_dni(
-            nuevo_dni
+    if datos_nuevos.get_dni() != dni_actual:
+
+        persona_existente = dao.obtener_persona_por_dni(
+            datos_nuevos.get_dni()
         )
 
-        if cliente_con_nuevo_dni is not None:
+        if persona_existente is not None:
             raise ValueError(
-                "Ya existe otro cliente con ese DNI."
+                "Ya existe otra persona con ese DNI."
             )
 
-    # Actualizar el cliente en la base de datos
+    # Preparar los valores a modificar
+    nuevos_valores = {
+        "nombre": datos_nuevos.get_nombre(),
+        "apellido": datos_nuevos.get_apellido(),
+        "dni": datos_nuevos.get_dni()
+    }
+
+    # La contraseña solo se modifica si se proporciona una nueva
+    if password:
+        nuevos_valores["hashedpassword"] = (
+            datos_nuevos.get_password_hash()
+        )
+
+    # Actualizar PersonaModel
     with dao.session_factory.begin() as session:
         session.execute(
-            update(ClienteModel)
-            .where(ClienteModel.dni == dni_actual)
-            .values(
-                nombre=datos_nuevos.get_nombre(),
-                apellido=datos_nuevos.get_apellido(),
-                dni=datos_nuevos.get_dni()
-            )
+            update(PersonaModel)
+            .where(PersonaModel.dni == dni_actual)
+            .values(**nuevos_valores)
         )
 
     return True
