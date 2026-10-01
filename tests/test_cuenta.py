@@ -34,7 +34,7 @@ def test_inicializacion_cuenta_exitosa(cliente_valido):
     # Assert
     assert cuenta.get_nro_cuenta() == "CTA-123"
     assert cuenta.get_saldo() == 500.0
-    assert cuenta.get_cliente().get_nombre() == "Juan"
+    assert cuenta.get_cliente().get_nombre() == "Laura"
 
 
 def test_cuenta_se_relaciona_con_la_tabla_cuenta_de_db():
