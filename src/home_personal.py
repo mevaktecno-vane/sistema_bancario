@@ -10,16 +10,17 @@ from src.home_crear_cliente import render_gestion_cliente
 from src.navegacion import ir_a
 from src.sesion import Sesion
 
-# Paleta de colores - Capital Bank Dark Neon
-BG_FONDO = "#0a0a0f"
-BG_TARJETA = "#181820"
-BORDE_NEON = "#8b2fc9"
-NEON_CLARO = "#a855f7"
-BORDE_TARJETA = "#2d1b4e"
-GRIS = "#a0a0a0"
-GRIS_OSCURO = "#7a7a7a"
+# Paleta de colores - Capital Bank Desktop Neon
+BG_FONDO = "#0c0b11"
+BG_TABLA = "#121118"
+BORDE_NEON = "#9333ea"
+BORDE_NEON_BRIGHT = "#a855f7"
+LINEA_DIVISORIA = "#232130"
+COLOR_ENCABEZADO = "#7e7894"
+COLOR_BLANCO = "#ffffff"
 
-# Temporal: DAO para el panel de personal
+# Temporal: subclase del DAO con lo que el panel necesita hasta que
+# BE-07/08/09 se reescriban (ver src/dao_personal.py).
 _dao = DAOPersonal("sistema_bancario.db")
 
 
@@ -35,19 +36,54 @@ def _ir_login(page):
 
 def _aviso(page, texto, ok=True):
     page.snack_bar = ft.SnackBar(
-        ft.Text(texto, color="#ffffff"),
-        bgcolor=BORDE_TARJETA if ok else "#5c1d2e",
+        ft.Text(texto),
+        bgcolor=ft.Colors.GREEN_700 if ok else ft.Colors.RED_700,
     )
     page.snack_bar.open = True
     page.update()
 
 
+def _formatear_cuentas_badges(id_cliente):
+    """Obtiene y renderiza las cuentas del cliente como badges según el diseño."""
+    try:
+        cuentas = _dao.obtener_cuentas_por_cliente(id_cliente)
+    except Exception:
+        cuentas = []
+
+    if not cuentas:
+        return [ft.Text("Sin cuentas", size=11, color=COLOR_ENCABEZADO)]
+
+    badges = []
+    for c in cuentas:
+        nombre_clase = c.__class__.__name__.lower()
+        if "ahorro" in nombre_clase:
+            label = "Caja de ahorro"
+        elif "corriente" in nombre_clase:
+            label = "Corriente"
+        elif isinstance(c, dict):
+            label = "Caja de ahorro" if "ahorro" in str(c.get("tipo", "")).lower() else "Corriente"
+        elif isinstance(c, (list, tuple)) and len(c) > 1:
+            label = "Caja de ahorro" if "ahorro" in str(c[1]).lower() else "Corriente"
+        else:
+            label = "Corriente"
+
+        badges.append(
+            ft.Container(
+                padding=ft.Padding(10, 4, 10, 4),
+                border=ft.border.all(1, BORDE_NEON_BRIGHT),
+                border_radius=8,
+                content=ft.Text(label, size=11, color=COLOR_BLANCO),
+            )
+        )
+    return badges
+
+
 def render_home_personal(page: ft.Page):
-    """Panel de administración y gestión de clientes con diseño neón oscuro."""
-    page.title = "Capital Bank - Panel Personal"
-    page.window_width = 420
-    page.window_height = 680
-    page.window_resizable = False
+    """Home del personal con diseño Capital Bank Desktop Neon."""
+    page.title = "Capital Bank - Personal"
+    page.window_width = 980
+    page.window_height = 640
+    page.window_resizable = True
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.bgcolor = BG_FONDO
 
@@ -58,204 +94,251 @@ def render_home_personal(page: ft.Page):
     nombre = Sesion.actual().get("nombre", "Personal")
     clientes = _dao.obtener_todos_clientes()
 
-    def _cerrar_sesion(e):
+    def _nuevo(e):
+        ir_a(page, render_gestion_cliente)
+
+    def _cerrar(e):
         Sesion.cerrar()
         _ir_login(page)
 
-    def _nuevo_cliente(e):
-        ir_a(page, render_gestion_cliente)
-
-    # ---- Encabezado superior ----
-    header = ft.Row(
-        vertical_alignment=ft.CrossAxisAlignment.START,
-        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+    # ---- Encabezado: Logo, Título y Acciones ----
+    logo_widget = ft.Row(
+        spacing=10,
+        vertical_alignment=ft.CrossAxisAlignment.CENTER,
         controls=[
-            ft.Column(
-                spacing=3,
-                controls=[
-                    ft.Text(
-                        f"Hola, {nombre} 💼",
-                        size=22,
-                        weight=ft.FontWeight.BOLD,
-                        color="#ffffff",
-                    ),
-                    ft.Text(
-                        "Panel de Gestión y Clientes",
-                        size=13,
-                        color=GRIS,
-                    ),
-                ],
-            ),
-            ft.OutlinedButton(
-                content=ft.Text("Cerrar sesión", size=12, color=NEON_CLARO),
-                style=ft.ButtonStyle(
-                    side=ft.BorderSide(width=1, color=BORDE_NEON),
-                    shape=ft.RoundedRectangleBorder(radius=18),
-                    padding=ft.Padding(14, 6, 14, 6),
+            ft.Container(
+                width=46,
+                height=52,
+                border_radius=8,
+                border=ft.border.all(2, BORDE_NEON_BRIGHT),
+                shadow=ft.BoxShadow(
+                    blur_radius=12,
+                    color=BORDE_NEON,
+                    offset=ft.Offset(0, 0),
                 ),
-                on_click=_cerrar_sesion,
+                alignment=ft.alignment.center,
+                content=ft.Column(
+                    alignment=ft.MainAxisAlignment.CENTER,
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                    spacing=1,
+                    controls=[
+                        ft.Icon(ft.Icons.SHIELD_OUTLINED, color=BORDE_NEON_BRIGHT, size=24),
+                        ft.Text("CB", size=9, weight=ft.FontWeight.BOLD, color=BORDE_NEON_BRIGHT),
+                    ],
+                ),
+            ),
+            ft.Column(
+                spacing=0,
+                controls=[
+                    ft.Text("CAPITAL", size=13, weight=ft.FontWeight.BOLD, color=COLOR_BLANCO),
+                    ft.Text("BANK", size=13, weight=ft.FontWeight.BOLD, color=COLOR_BLANCO),
+                ],
             ),
         ],
     )
 
-    # ---- Resumen / Control superior ----
-    resumen_control = ft.Container(
-        padding=ft.Padding(18, 14, 18, 14),
-        bgcolor=BG_TARJETA,
-        border_radius=15,
-        border=ft.border.all(1, BORDE_TARJETA),
-        content=ft.Row(
-            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-            vertical_alignment=ft.CrossAxisAlignment.CENTER,
-            controls=[
-                ft.Text("Clientes registrados", size=14, color=GRIS),
-                ft.Container(
-                    content=ft.Text(
-                        f"{len(clientes)}",
-                        size=15,
-                        weight=ft.FontWeight.BOLD,
-                        color=NEON_CLARO,
-                    ),
-                    padding=ft.Padding(12, 4, 12, 4),
-                    bgcolor=BORDE_TARJETA,
-                    border_radius=12,
-                ),
-            ],
-        ),
-    )
-
-    # ---- Constructor de tarjetas de clientes ----
-    def _construir_tarjeta_cliente(id_cliente, nom, ape, dni, categoria, estado):
-        try:
-            n_cuentas = len(_dao.obtener_cuentas_por_cliente(id_cliente))
-        except Exception:
-            n_cuentas = "?"
-
-        es_activo = str(estado).strip().lower() == "activo"
-
-        return ft.Container(
-            padding=16,
-            bgcolor=BG_TARJETA,
-            border_radius=15,
-            border=ft.border.all(1, BORDE_TARJETA),
-            shadow=ft.BoxShadow(
-                blur_radius=12,
-                color=BORDE_NEON,
-                offset=ft.Offset(0, 0),
-            ),
-            content=ft.Column(
-                spacing=8,
+    header = ft.Row(
+        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        controls=[
+            ft.Row(
+                spacing=24,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 controls=[
-                    ft.Row(
-                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    logo_widget,
+                    ft.Column(
+                        spacing=2,
                         controls=[
                             ft.Text(
-                                f"{ape}, {nom}",
-                                size=15,
+                                "VISTA PERSONAL",
+                                size=11,
                                 weight=ft.FontWeight.BOLD,
-                                color="#ffffff",
+                                color=BORDE_NEON_BRIGHT,
                             ),
-                            ft.Container(
-                                content=ft.Text(
-                                    str(estado).lower(),
-                                    size=10,
-                                    weight=ft.FontWeight.BOLD,
-                                    color=NEON_CLARO if es_activo else GRIS,
-                                ),
-                                padding=ft.Padding(8, 2, 8, 2),
-                                bgcolor=BORDE_TARJETA,
-                                border_radius=10,
+                            ft.Text(
+                                "Clientes",
+                                size=32,
+                                weight=ft.FontWeight.BOLD,
+                                color=COLOR_BLANCO,
                             ),
-                        ],
-                    ),
-                    ft.Row(
-                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                        controls=[
-                            ft.Column(
-                                spacing=2,
-                                controls=[
-                                    ft.Text(f"DNI: {dni}", size=12, color=GRIS),
-                                    ft.Text(
-                                        f"Categoría: {categoria} · Cuentas: {n_cuentas}",
-                                        size=11,
-                                        color=GRIS_OSCURO,
-                                    ),
-                                ],
-                            ),
-                            ft.OutlinedButton(
-                                content=ft.Text("Gestionar", size=11, color=NEON_CLARO),
-                                style=ft.ButtonStyle(
-                                    side=ft.BorderSide(width=1, color=BORDE_NEON),
-                                    shape=ft.RoundedRectangleBorder(radius=14),
-                                    padding=ft.Padding(10, 4, 10, 4),
-                                ),
-                                on_click=lambda e, d=dni: ir_a(
-                                    page, lambda p: render_gestion_cliente(p, dni=d)
-                                ),
+                            ft.Text(
+                                "Dale de alta a los clientes y a sus cuentas",
+                                size=13,
+                                color=COLOR_ENCABEZADO,
                             ),
                         ],
                     ),
                 ],
             ),
-        )
-
-    # ---- Lista o estado vacío ----
-    if clientes:
-        lista_clientes = ft.Column(
-            spacing=12,
-            controls=[_construir_tarjeta_cliente(*c) for c in clientes],
-        )
-    else:
-        lista_clientes = ft.Container(
-            padding=30,
-            alignment=ft.alignment.center,
-            content=ft.Text(
-                "No hay clientes registrados en el sistema.",
-                size=13,
-                color=GRIS_OSCURO,
-                text_align=ft.TextAlign.CENTER,
+            ft.Row(
+                spacing=12,
+                controls=[
+                    ft.ElevatedButton(
+                        content=ft.Text(
+                            "+ Alta cliente",
+                            size=14,
+                            weight=ft.FontWeight.W_600,
+                            color=COLOR_BLANCO,
+                        ),
+                        bgcolor=BORDE_NEON,
+                        style=ft.ButtonStyle(
+                            shape=ft.RoundedRectangleBorder(radius=10),
+                            padding=ft.Padding(20, 14, 20, 14),
+                            shadow_color=BORDE_NEON_BRIGHT,
+                            elevation=6,
+                        ),
+                        on_click=_nuevo,
+                    ),
+                    ft.IconButton(
+                        icon=ft.Icons.LOGOUT_ROUNDED,
+                        icon_color=COLOR_ENCABEZADO,
+                        icon_size=20,
+                        tooltip="Cerrar sesión",
+                        on_click=_cerrar,
+                    ),
+                ],
             ),
-        )
-
-    # ---- Botón de acción principal ----
-    btn_crear = ft.ElevatedButton(
-        content=ft.Row(
-            alignment=ft.MainAxisAlignment.CENTER,
-            controls=[
-                ft.Icon(ft.Icons.PERSON_ADD_ALT_1_ROUNDED, color="#ffffff", size=18),
-                ft.Text("Crear nuevo cliente", color="#ffffff", weight=ft.FontWeight.BOLD),
-            ],
-        ),
-        bgcolor=BORDE_NEON,
-        style=ft.ButtonStyle(
-            shape=ft.RoundedRectangleBorder(radius=16),
-            padding=ft.Padding(0, 14, 0, 14),
-        ),
-        on_click=_nuevo_cliente,
-    )
-
-    # ---- Scroll central ----
-    contenido_central = ft.Column(
-        scroll=ft.ScrollMode.ADAPTIVE,
-        expand=True,
-        spacing=14,
-        controls=[lista_clientes],
-    )
-
-    layout = ft.Column(
-        expand=True,
-        spacing=16,
-        controls=[
-            header,
-            resumen_control,
-            contenido_central,
-            btn_crear,
         ],
     )
 
-    page.add(ft.Container(content=layout, padding=24, expand=True))
+    # ---- Tabla: Encabezados ----
+    tabla_header = ft.Container(
+        padding=ft.Padding(24, 16, 24, 12),
+        content=ft.Row(
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[
+                ft.Container(
+                    expand=3,
+                    content=ft.Text("CLIENTE", size=11, weight=ft.FontWeight.BOLD, color=COLOR_ENCABEZADO),
+                ),
+                ft.Container(
+                    expand=2,
+                    content=ft.Text("DNI", size=11, weight=ft.FontWeight.BOLD, color=COLOR_ENCABEZADO),
+                ),
+                ft.Container(
+                    expand=3,
+                    content=ft.Text("CUENTAS", size=11, weight=ft.FontWeight.BOLD, color=COLOR_ENCABEZADO),
+                ),
+                ft.Container(
+                    expand=1,
+                    alignment=ft.alignment.center_right,
+                    content=ft.Text("ACCIÓN", size=11, weight=ft.FontWeight.BOLD, color=COLOR_ENCABEZADO),
+                ),
+            ],
+        ),
+    )
+
+    # ---- Construcción de filas conservando la lógica del for ----
+    filas_controles = []
+    for id_cliente, nom, ape, dni, categoria, estado in clientes:
+        def _abrir(e, d=dni):
+            ir_a(page, lambda p: render_gestion_cliente(p, dni=d))
+
+        fila = ft.Container(
+            padding=ft.Padding(24, 14, 24, 14),
+            border=ft.Border(bottom=ft.BorderSide(1, LINEA_DIVISORIA)),
+            content=ft.Row(
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                controls=[
+                    # CLIENTE
+                    ft.Container(
+                        expand=3,
+                        content=ft.Text(
+                            f"{nom} {ape}",
+                            size=14,
+                            weight=ft.FontWeight.W_500,
+                            color=COLOR_BLANCO,
+                        ),
+                    ),
+                    # DNI
+                    ft.Container(
+                        expand=2,
+                        content=ft.Text(
+                            str(dni),
+                            size=14,
+                            color=COLOR_BLANCO,
+                        ),
+                    ),
+                    # CUENTAS
+                    ft.Container(
+                        expand=3,
+                        content=ft.Row(
+                            wrap=True,
+                            spacing=6,
+                            controls=_formatear_cuentas_badges(id_cliente),
+                        ),
+                    ),
+                    # ACCIÓN (Gestionar / Ver)
+                    ft.Container(
+                        expand=1,
+                        alignment=ft.alignment.center_right,
+                        content=ft.OutlinedButton(
+                            content=ft.Text("Ver", size=12, color=COLOR_BLANCO),
+                            style=ft.ButtonStyle(
+                                side=ft.BorderSide(1, BORDE_NEON_BRIGHT),
+                                shape=ft.RoundedRectangleBorder(radius=10),
+                                padding=ft.Padding(18, 8, 18, 8),
+                            ),
+                            on_click=_abrir,
+                        ),
+                    ),
+                ],
+            ),
+        )
+        filas_controles.append(fila)
+
+    if not filas_controles:
+        filas_controles.append(
+            ft.Container(
+                padding=40,
+                alignment=ft.alignment.center,
+                content=ft.Text(
+                    f"No hay clientes registrados en el sistema (Total: {len(clientes)}).",
+                    size=13,
+                    color=COLOR_ENCABEZADO,
+                ),
+            )
+        )
+
+    # ---- Contenedor principal de la tabla con resplandor neón ----
+    tabla_contenedor = ft.Container(
+        bgcolor=BG_TABLA,
+        border_radius=18,
+        border=ft.border.all(1.5, BORDE_NEON),
+        shadow=ft.BoxShadow(
+            blur_radius=18,
+            color="#581c87",
+            offset=ft.Offset(0, 0),
+        ),
+        content=ft.Column(
+            spacing=0,
+            controls=[
+                tabla_header,
+                ft.Container(height=1, bgcolor=LINEA_DIVISORIA),
+                ft.Column(
+                    spacing=0,
+                    scroll=ft.ScrollMode.ADAPTIVE,
+                    controls=filas_controles,
+                ),
+            ],
+        ),
+    )
+
+    page.clean()
+    page.add(
+        ft.Container(
+            padding=ft.Padding(36, 28, 36, 28),
+            expand=True,
+            content=ft.Column(
+                expand=True,
+                spacing=24,
+                controls=[
+                    header,
+                    tabla_contenedor,
+                ],
+            ),
+        )
+    )
 
 
 if __name__ == "__main__":
