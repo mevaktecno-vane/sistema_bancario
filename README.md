@@ -4,12 +4,13 @@ Proyecto integrador para las asignaturas **Refactoring y Testing** e **Integraci
 
 ## 👥 Integrantes y Equipo de Desarrollo
 * **Mara Vanesa San Martín** (Tests de Dominio, Tests de Integración DAO, CI/CD)
-* **Daniel Ricardo González** 
-* **Erika Muñoz** 
-* **Cristian Testaseca**
-* **Andrés Verdún** 
-* **Romina Marín** 
-* **Valentina San Martín** 
+* **Daniel Ricardo González** (ABM de transacciones y front de personal)
+* **Erika Muñoz** (Integración)
+* **Cristian Testaseca** (Base de Datos y DAO)
+* **Andrés Verdún** (Gestión de clientes desde Backend)
+* **Romina Marín** (Front Login y cliente)
+* **Valentina San Martín** (Template)
+* **Zafiro Ávila** (Front "Operar" e "Historial" de cliente)
 
 ## 🎯 Objetivos del Proyecto
 * **Refactoring & Código Limpio:** Aplicación de principios SOLID (SRP, OCP, LSP, ISP, DIP), eliminación de Code Smells y lectura tipo periódico (*Extract Method*).
