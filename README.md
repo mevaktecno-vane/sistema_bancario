@@ -25,17 +25,22 @@ Proyecto integrador para las asignaturas **Refactoring y Testing** e **Integraci
 
 ## 🧪 Pruebas Automatizadas (`pytest`)
 
-El proyecto cuenta con una suite completa dividida en dos niveles:
+El proyecto cuenta con una suite integral dividida en dos niveles de testing que suman un total de **47 casos de prueba automatizados** (44 activos en verde y 3 omitidos temporalmente a la espera de merges externos):
 
 ### 1. Tests Unitarios (Dominio de Negocio)
-* `tests/test_cliente.py`: Validaciones de formato, datos requeridos e integridad de `Cliente`.
-* `tests/test_cuenta.py`: Depósitos, retiros, control de saldo y excepción `SaldoInsuficienteError`.
-* `tests/test_transaccion.py`: Historial de operaciones y marcas de tiempo (`datetime`).
-* `tests/test_cuenta_ahorro.py`: Cálculo de tasas de interés y validación de herencia LSP.
+* `tests/test_autenticacion.py`: Autenticación segura de usuarios y gestión de sesiones.
+* `tests/test_persona.py`: Validaciones de la clase base `Persona`, formato de DNI y hashing de contraseñas.
+* `tests/test_cliente.py`: Validaciones de formato, datos requeridos e integridad de la entidad `Cliente`.
+* `tests/test_empleado.py`: Comportamiento, atributos y asignación de legajos/sucursales para `Empleado`.
+* `tests/test_cuenta.py`: Depósitos, retiros, control de saldo y captura de `SaldoInsuficienteError`.
+* `tests/test_cuenta_ahorro.py`: Cálculo de tasas de interés y validación de herencia Liskov (LSP).
+* `tests/test_transaccion.py`: Historial de operaciones, marcas de tiempo (`datetime`) y validaciones de tipo/monto.
 * `tests/test_tarjeta.py`: Compras, pagos y control de cupo con `LimiteExcedidoError`.
+* `tests/test_navegacion.py`: Flujos de navegación e interacción lógica en la interfaz Flet.
 
 ### 2. Tests de Integración (Persistencia & DAO)
-* `tests/test_dao.py`: Verificación de operaciones CRUD, claves foráneas y mapeo ORM SQLite mediante base de datos en memoria (`:memory:`).
+* `tests/test_dao_schema.py`: Validación del esquema relacional en SQLite, claves foráneas (`PRAGMA foreign_keys=ON`) y mapeo SQLAlchemy ORM.
+* `tests/test_propuesta.py`: Integración completa de flujos de depósitos, retiros e intereses con persistencia aislada mediante base de datos en memoria (`DAO(":memory:")`).
 
 ## 🚀 Instalación y Ejecución Local
 

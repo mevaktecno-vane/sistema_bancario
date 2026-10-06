@@ -1,0 +1,49 @@
+Directory structure:
+└── mevaktecno-vane-sistema_bancario/
+    ├── README.md
+    ├── DAO.md
+    ├── ejemplo_dao.py
+    ├── INTEGRACION_DAO.md
+    ├── main.py
+    ├── main_legado.py
+    ├── programa_dao.py
+    ├── requirements.txt
+    ├── docs/
+    │   ├── diagrama_entidad_relacion.mmd
+    │   └── generar_diagrama_er.py
+    ├── src/
+    │   ├── __init__.py
+    │   ├── app_banco.py
+    │   ├── cliente.py
+    │   ├── cuenta.py
+    │   ├── cuenta_ahorro.py
+    │   ├── dao.py
+    │   ├── datos_demo.py
+    │   ├── exportar_datos_a_pdf.py
+    │   ├── gestion-bancaria.py
+    │   ├── home_cliente.py
+    │   ├── home_personal.py
+    │   ├── login.py
+    │   ├── models.py
+    │   ├── navegacion.py
+    │   ├── sesion.py
+    │   ├── tarjeta.py
+    │   └── transaccion.py
+    ├── tests/
+    │   ├── __init__.py
+    │   ├── conftest.py
+    │   ├── deprecated_test_cliente.py
+    │   ├── deprecated_test_cuenta.py
+    │   ├── deprecated_test_cuenta_ahorro.py
+    │   ├── deprecated_test_tarjeta.py
+    │   ├── deprecated_test_transaccion.py
+    │   ├── test_cliente.py
+    │   ├── test_cuenta.py
+    │   ├── test_cuenta_ahorro.py
+    │   ├── test_dao.py
+    │   ├── test_propuesta.py
+    │   ├── test_tarjeta.py
+    │   └── test_transaccion.py
+    └── .github/
+        └── workflows/
+            └── ci.yml
