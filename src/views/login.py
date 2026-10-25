@@ -6,8 +6,8 @@ import flet as ft
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.datos_demo import autenticar
-from src.sesion import Sesion
+from src.models.datos_demo import autenticar
+from src.controllers.sesion import Sesion
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOGO_PATH = os.path.join(BASE_DIR, "img", "logo_clean.png")
@@ -73,9 +73,9 @@ def render_login(page: ft.Page):
         Sesion.iniciar(usuario)
         mostrar_mensaje(f"Sesión iniciada como {usuario['rol']}", es_error=False)
 
-        from src.home_cliente import render_home_cliente
-        from src.home_personal import render_home_personal
-        from src.navegacion import ir_a
+        from src.views.home_cliente import render_home_cliente
+        from src.views.home_personal import render_home_personal
+        from src.views.navegacion import ir_a
 
         if usuario["rol"] == "cliente":
             ir_a(page, render_home_cliente)

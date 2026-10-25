@@ -1,5 +1,5 @@
 import pytest
-from src.transaccion import Transaccion
+from src.models.transaccion import Transaccion
 
 
 def test_crear_transaccion_deposito():

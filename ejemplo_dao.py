@@ -3,11 +3,11 @@ Ejemplo de uso del DAO (Data Access Object) con SQLite.
 Muestra cómo guardar y recuperar datos de la base de datos.
 """
 
-from src.dao import DAO
+from src.models.dao import DAO
 from src.cliente import Cliente
-from src.cuenta import Cuenta
-from src.cuenta_ahorro import CuentaAhorro
-from src.tarjeta import Tarjeta
+from src.models.cuenta import Cuenta
+from src.models.cuenta_ahorro import CuentaAhorro
+from src.models.tarjeta import Tarjeta
 
 
 def ejemplo_dao():

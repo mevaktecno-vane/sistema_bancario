@@ -1,6 +1,6 @@
 import flet as ft
 
-from src.app_banco import main as app_gui
+from src.controllers.app_banco import main as app_gui
 
 
 def main():

@@ -1,6 +1,6 @@
 import flet as ft
 
-from src.login import render_login
+from src.views.login import render_login
 
 
 def main(page: ft.Page):

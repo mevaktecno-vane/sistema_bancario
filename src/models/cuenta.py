@@ -1,4 +1,4 @@
-from src.transaccion import Transaccion
+from src.models.transaccion import Transaccion
 
 
 class SaldoInsuficienteError(Exception):

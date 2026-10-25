@@ -1,11 +1,11 @@
 import flet as ft
 import threading
 from src.cliente import Cliente
-from src.cuenta import Cuenta, SaldoInsuficienteError
-from src.tarjeta import Tarjeta
-from src.transaccion import Transaccion
-from src.cuenta_ahorro import CuentaAhorro
-from src.exportar_datos_a_pdf import generar_pdf_reporte
+from src.models.cuenta import Cuenta, SaldoInsuficienteError
+from src.models.tarjeta import Tarjeta
+from src.models.transaccion import Transaccion
+from src.models.cuenta_ahorro import CuentaAhorro
+from src.controllers.exportar_datos_a_pdf import generar_pdf_reporte
 
 class SaldoInsuficienteError(Exception): pass
 class LimiteExcedidoError(Exception): pass 
@@ -181,7 +181,7 @@ def main(page: ft.Page):
         if cliente_actual is None:
              return False, "No hay cliente seleccionado para exportar."
         
-        from src.cuenta_ahorro import CuentaAhorro 
+        from src.models.cuenta_ahorro import CuentaAhorro 
         
         # --- Generación del PDF ---
         return generar_pdf_reporte(

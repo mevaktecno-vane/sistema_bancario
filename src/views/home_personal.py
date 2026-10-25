@@ -5,8 +5,8 @@ import flet as ft
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.navegacion import ir_a
-from src.sesion import Sesion
+from src.views.navegacion import ir_a
+from src.controllers.sesion import Sesion
 
 BG_FONDO = "#0a0a0f"
 BG_TARJETA = "#181820"
@@ -27,7 +27,7 @@ def render_home_personal(page: ft.Page):
 
     def _cerrar_sesion(e):
         Sesion.cerrar()
-        from src.login import render_login
+        from src.views.login import render_login
         ir_a(page, render_login)
 
     card = ft.Container(
@@ -87,7 +87,7 @@ def render_home_personal(page: ft.Page):
 
 
 if __name__ == "__main__":
-    from src.sesion import Sesion
+    from src.controllers.sesion import Sesion
     Sesion.iniciar({
         "dni": "22233344",
         "rol": "personal",

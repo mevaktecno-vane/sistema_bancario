@@ -1,7 +1,7 @@
 import pytest
-from src.cuenta_ahorro import CuentaAhorro
-from src.cuenta import Cuenta
-from src.cliente import Cliente
+from src.models.cuenta_ahorro import CuentaAhorro
+from src.models.cuenta import Cuenta
+from src.models.cliente import Cliente
 
 
 # ==============================================================================

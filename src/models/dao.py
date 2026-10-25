@@ -5,8 +5,8 @@ from sqlalchemy import create_engine, delete, event, select, update
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 
-from src.cliente import Cliente
-from src.models import (
+from src.models.cliente import Cliente
+from src.models.models import (
     Base, ClienteModel, CuentaModel, MovimientoTarjetaModel,
     TarjetaModel, TransaccionModel,
 )

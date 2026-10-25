@@ -2,8 +2,8 @@
 
 import argparse
 
-from src.cliente import Cliente
-from src.dao import DAO
+from src.models.cliente import Cliente
+from src.models.dao import DAO
 
 
 def mostrar_datos(dao: DAO, registros: list[tuple[int, int, int, str, str]]) -> None:

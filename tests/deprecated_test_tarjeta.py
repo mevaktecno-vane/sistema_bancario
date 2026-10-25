@@ -1,6 +1,6 @@
 import pytest
-from src.cliente import Cliente
-from src.tarjeta import Tarjeta, LimiteExcedidoError
+from src.models.cliente import Cliente
+from src.models.tarjeta import Tarjeta, LimiteExcedidoError
 
 
 def test_crear_tarjeta_valida():

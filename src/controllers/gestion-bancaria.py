@@ -1,7 +1,7 @@
 from sqlalchemy import update
 
-from src.cliente import Cliente
-from src.models import ClienteModel
+from src.models.cliente import Cliente
+from src.models.models import ClienteModel
 
 
 # =========================================================

@@ -1,6 +1,6 @@
 import pytest
-from src.tarjeta import Tarjeta, LimiteExcedidoError
-from src.cliente import Cliente
+from src.models.tarjeta import Tarjeta, LimiteExcedidoError
+from src.models.cliente import Cliente
 
 
 # ==============================================================================
